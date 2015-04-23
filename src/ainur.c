@@ -11,7 +11,7 @@
 
 //External libraries...
 #ifdef USE_SDL2
-#include <SDL2/SDL.h>
+#include <SDL2/SDL.h> //I have decided to use only SDL2 for this project.
 #else
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
