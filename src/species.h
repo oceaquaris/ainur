@@ -2,7 +2,7 @@
  * species.h
  *
  *  Created on: Mar 23, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #ifndef SPECIES_H_

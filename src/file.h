@@ -2,7 +2,7 @@
  * @file file.h
  *
  *  Created on: Mar 13, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  *
  * @brief Header file for file.c
  */

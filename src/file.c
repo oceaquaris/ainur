@@ -2,7 +2,7 @@
  * file.c
  *
  *  Created on: Mar 13, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  *
  * @brief Contains functions for manipulating files.
  */

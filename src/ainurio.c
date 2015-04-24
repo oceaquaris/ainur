@@ -2,15 +2,11 @@
  * input.c
  *
  *  Created on: Apr 17, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 #include "ainur.h"
 
-#ifdef USE_SDL2
 #include <SDL2/SDL.h>
-#else
-#include <SDL/SDL.h>
-#endif /*USE_SDL2*/
 
 #include <stdarg.h>
 #include <string.h>

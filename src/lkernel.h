@@ -2,7 +2,7 @@
  * lkernel_lua.h
  *
  *  Created on: Mar 20, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #ifndef LKERNEL_H_

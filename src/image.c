@@ -2,20 +2,16 @@
  * image.c
  *
  *  Created on: Apr 21, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
-#include "ainur.h"
 
-#ifdef USE_SDL2
-#include <SDL/SDL2.h>
-#else
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#endif /*USE_SDL2*/
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "ainur.h"
 #include "debug.h"
 #include "image.h"
 #include "file.h"
@@ -28,7 +24,7 @@
  */
 int image_loadInit()
 {
-    if( !IMG_Init(IMG_INIT_PNG) ) { //if IMG_Init() fails
+    if( !IMG_Init(IMG_INIT_PNG /*0x00000002*/) ) { //if IMG_Init() fails
         #ifdef DEBUGGING
         if(debugging) {
             debug_fprintf("image_load() => IMG_Init() error: %s\n", IMG_GetError());
@@ -74,7 +70,9 @@ SDL_Surface *image_load(const char *filename)
         return NULL;
     }
 
+    //Load an SDL_Surface using the filename given.
     SDL_Surface *temp = IMG_Load(filename);
+
     if(!temp) {
         #ifdef DEBUGGING
         if(debugging) {
@@ -89,7 +87,8 @@ SDL_Surface *image_load(const char *filename)
         }
         #endif /*VERBOSE*/
 
-        if(file_exists(filename)) { //error message will be printed in file_exists()
+        if(file_exists(filename)) {
+            //an error message will be printed by file_exists() if filename doesn't exist
             //if the file exists, there must by an SDL error...
             #ifdef DEBUGGING
             if(debugging) {
@@ -106,31 +105,34 @@ SDL_Surface *image_load(const char *filename)
         return NULL;
     }
 
+    //Declare an SDL_Surface (for output by function)
     SDL_Surface *output;
 
     /* Make the background transparent */
-    SDL_SetColorKey(temp, (SDL_SRCCOLORKEY|SDL_RLEACCEL), SDL_MapRGB(temp->format, 0, 0, 0));
+    SDL_SetColorKey(temp, SDL_TRUE, SDL_MapRGB(temp->format, 0, 0, 0));
 
     /* Convert the image to the screen's native format */
-    output = SDL_DisplayFormat(temp);
-
-    SDL_FreeSurface(temp);
+    output = SDL_ConvertSurfaceFormat(temp, SDL_PIXELTYPE_UNKNOWN, 0 );
 
     if(!output) {
         #ifdef DEBUGGING
         if(debugging) {
             debug_fprintf("image_load() => local var \'output\': %s\n", ERROR_NULL_SDL_SURFACE);
+            debug_fprintf("                %s\n", SDL_GetError());
         }
         #endif /* DEBUGGING */
         #ifdef VERBOSE
         if(verbose) {
             debug_printf("image_load() => local var \'output\': %s\n", ERROR_NULL_SDL_SURFACE);
+            debug_printf("                %s\n", SDL_GetError());
         }
         #endif /*VERBOSE*/
 
         return NULL;
     }
 
+    //Free our temporary variable
+    SDL_FreeSurface(temp);
+
     return output;
 }
-

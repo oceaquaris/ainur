@@ -2,7 +2,7 @@
  * lkernel_lua.c
  *
  *  Created on: Mar 20, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 

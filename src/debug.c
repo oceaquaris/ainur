@@ -3,7 +3,7 @@
  *
  * @brief Contains functions for debugging
  *  Created on: Mar 12, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #include <stdio.h>

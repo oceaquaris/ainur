@@ -2,7 +2,7 @@
  * @file debug.h
  *
  *  Created on: Mar 12, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #ifndef DEBUG_H_

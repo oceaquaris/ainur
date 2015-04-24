@@ -2,7 +2,7 @@
  * image.h
  *
  *  Created on: Apr 21, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #ifndef IMAGE_H_

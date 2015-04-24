@@ -2,12 +2,14 @@
  * randgen.c
  *
  *  Created on: Mar 26, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 
 #include <math.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
 
 
 void randgen_init(void)

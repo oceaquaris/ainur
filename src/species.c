@@ -2,7 +2,7 @@
  * species.c
  *
  *  Created on: Mar 23, 2015
- *      Author: rs14
+ *      Author: ocequaris
  */
 
 

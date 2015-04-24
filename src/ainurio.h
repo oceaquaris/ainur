@@ -2,7 +2,7 @@
  * input.h
  *
  *  Created on: Apr 17, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #ifndef AINURIO_H_

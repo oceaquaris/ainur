@@ -2,7 +2,7 @@
  * randgen.h
  *
  *  Created on: Mar 26, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
 #ifndef RANDGEN_H_

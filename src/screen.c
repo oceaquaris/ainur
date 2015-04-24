@@ -2,26 +2,52 @@
  * init.c
  *
  *  Created on: Apr 10, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  */
 
-#include "ainur.h"
 
-#ifdef USE_SDL2
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_Surface.h>
-#else
-#include <SDL/SDL.h>
-#include <SDL/SDL_video.h>
-#endif /*USE_SDL2*/
-#include <stdlib.h>
-#include <string.h>
-
-#include "ainurio.h"
-#include "debug.h"
 #include "screen.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_error.h>
+#include <SDL2/SDL_pixels.h>
+#include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_video.h>
+
+#include "ainur.h"
+#include "ainurio.h"
+#include "debug.h"
+
 struct engine ainur;
+
+
+/**
+ * @brief Initializes SDL2
+ *
+ * @return 0: normal execution
+ */
+int screen_initSDL()
+{
+    if( SDL_Init(SDL_INIT_EVERYTHING) < 0 ) { //if SDL_Init() has an error (not equal to 0)
+        #ifdef DEBUGGING
+        if(debugging) {
+            debug_fprintf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
+        }
+        #endif /*DEBUGGING*/
+        #ifdef VERBOSE
+        if(verbose) {
+            debug_printf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
+        }
+        #endif /*VERBOSE*/
+
+        exit(EXIT_FAILURE); //quit program & execute shutdown protocols
+    }
+
+    return 0;
+}
 
 /**
  * @brief Initializes SDL and creates a window.
@@ -31,23 +57,14 @@ struct engine ainur;
  */
 int screen_initMain(const char *title, int width, int height)
 {
-    if( SDL_Init(SDL_INIT_VIDEO) < 0 ) { //if SDL_Init() has an error (not equal to 0)
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("screen_initMain() => SDL_Init() error: %s\n", SDL_GetError());
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("screen_initMain() => SDL_Init() error: %s\n", SDL_GetError());
-        }
-        #endif /*VERBOSE*/
-
-        exit(EXIT_FAILURE); //quit program & execute shutdown protocols
-    }
-
     //create the main SDL_Surface
-    ainur.screen = SDL_SetVideoMode(width, height, 0, SDL_HWPALETTE|SDL_DOUBLEBUF);
+    //ainur.screen = SDL_SetVideoMode(width, height, 0, SDL_HWPALETTE|SDL_DOUBLEBUF);
+    ainur.screen = SDL_CreateWindow(title,
+                                    SDL_WINDOWPOS_CENTERED,
+                                    SDL_WINDOWPOS_CENTERED,
+                                    width,
+                                    height,
+                                    SDL_WINDOW_OPENGL);
 
     if( !(ainur.screen) ) {
         #ifdef DEBUGGING
@@ -66,8 +83,6 @@ int screen_initMain(const char *title, int width, int height)
         exit(EXIT_FAILURE); //quit program & execute shutdown protocols
     }
 
-    //set the title of a window
-    SDL_WM_SetCaption(title, NULL);
     //atexit(SDL_Quit);
 
     return 0;
@@ -149,7 +164,6 @@ void screen_dumpSDL_Surface(const char *label, SDL_Surface *surface)
      */
     ainurio_shstrcat(buffer, "         flags:\n");
     //sdl2 section
-    #ifdef USE_SDL2
     if(surface->flags & SDL_DONTFREE) {
         ainurio_shstrcat(buffer, "              SDL_DONTFREE: Surface is referenced internally\n");
     }
@@ -162,58 +176,6 @@ void screen_dumpSDL_Surface(const char *label, SDL_Surface *surface)
     if(surface->flags & SDL_SWSURFACE) {
         ainurio_shstrcat(buffer, "             SDL_SWSURFACE: Surface is in system memory\n");
     }
-
-    //regular sdl section
-    #else
-    if(surface->flags & SDL_ANYFORMAT) {
-        ainurio_shstrcat(buffer, "             SDL_ANYFORMAT: Allow any video depth/pixel-format\n");
-    }
-    if(surface->flags & SDL_ASYNCBLIT) {
-        ainurio_shstrcat(buffer, "             SDL_ASYNCBLIT: Use asynchronous blits if possible\n");
-    }
-    if(surface->flags & SDL_DOUBLEBUF) {
-        ainurio_shstrcat(buffer, "             SDL_DOUBLEBUF: Set up double-buffered video mode\n");
-    }
-    if(surface->flags & SDL_HWACCEL) {
-        ainurio_shstrcat(buffer, "               SDL_HWACCEL: Blit uses hardware acceleration\n");
-    }
-    if(surface->flags & SDL_HWPALETTE) {
-        ainurio_shstrcat(buffer, "             SDL_HWPALETTE: Surface has exclusive palette\n");
-    }
-    if(surface->flags & SDL_HWSURFACE) {
-        ainurio_shstrcat(buffer, "             SDL_HWSURFACE: Surface is in video memory\n");
-    }
-    if(surface->flags & SDL_FULLSCREEN) {
-        ainurio_shstrcat(buffer, "            SDL_FULLSCREEN: Surface is a full screen display\n");
-    }
-    if(surface->flags & SDL_NOFRAME){
-        ainurio_shstrcat(buffer, "               SDL_NOFRAME: No window caption or edge frame\n");
-    }
-    if(surface->flags & SDL_OPENGL) {
-        ainurio_shstrcat(buffer, "                SDL_OPENGL: Create an OpenGL rendering context\n");
-    }
-    if(surface->flags & SDL_OPENGLBLIT) {
-        ainurio_shstrcat(buffer, "            SDL_OPENGLBLIT: Create an OpenGL rendering context and use it for blitting\n");
-    }
-    if(surface->flags & SDL_PREALLOC){
-        ainurio_shstrcat(buffer, "              SDL_PREALLOC: Surface uses preallocated memory\n");
-    }
-    if(surface->flags & SDL_RESIZABLE) {
-        ainurio_shstrcat(buffer, "             SDL_RESIZABLE: This video mode may be resized\n");
-    }
-    if(surface->flags & SDL_RLEACCEL) {
-        ainurio_shstrcat(buffer, "              SDL_RLEACCEL: Surface is RLE encoded\n");
-    }
-    if(surface->flags & SDL_SRCALPHA) {
-        ainurio_shstrcat(buffer, "              SDL_SRCALPHA: Blit uses source alpha blending\n");
-    }
-    if(surface->flags & SDL_SRCCOLORKEY) {
-        ainurio_shstrcat(buffer, "           SDL_SRCCOLORKEY: Blit uses a source color key\n");
-    }
-    if(surface->flags & SDL_SWSURFACE) {
-        ainurio_shstrcat(buffer, "             SDL_SWSURFACE: Surface is in system memory\n");
-    }
-    #endif /*USE_SDL2*/
 
 
     #ifdef DEBUGGING

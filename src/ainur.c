@@ -2,25 +2,21 @@
  * @file ainur.c
  *
  *  Created on: Mar 11, 2015
- *      Author: rs14
+ *      Author: oceaquaris
  *
  * @brief Begins the game screen, etc.
  */
 
-#include "ainur.h" //order dependent!! Needs to be first for #define USE_SDL2
 
 //External libraries...
-#ifdef USE_SDL2
-#include <SDL2/SDL.h> //I have decided to use only SDL2 for this project.
-#else
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#endif /*USE_SDL2*/
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 //Internal libraries...
+#include "ainur.h"
 #include "ainurio.h"
 #include "debug.h"
 #include "file.h"
@@ -60,6 +56,7 @@ int main(int argc, char *argv[])
     }
 
     lkernel_init();
+    screen_initSDL();
 
     screen_initMain("Testing...", 400, 400);
     image_loadInit();
