@@ -9,27 +9,25 @@
 
 
 //External libraries...
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <string.h>
+#include "ainur.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_timer.h>
 
-//Internal libraries...
-#include "ainur.h"
 #include "ainurio.h"
 #include "debug.h"
-#include "file.h"
 #include "image.h"
 #include "lkernel.h"
-#include "mem.h"
 #include "screen.h"
 
 static void ainur_cleanEngine();
 
-
 /**
- * @brief The main function. Begins game.
+ * @brief The main function. Opens a window. Begins game.
  *
  * @param argc
  *        Argument count inputed from the command line.
@@ -55,17 +53,17 @@ int main(int argc, char *argv[])
         #endif /*VERBOSE*/
     }
 
-    lkernel_init();
-    screen_initSDL();
+    lkernel_init();		//initialize Lua
+    screen_initSDL();	//initialize SDL2
+    image_loadInit();	//initialize IMG (SDL2 extension)
 
-    screen_initMain("Testing...", 400, 400);
-    image_loadInit();
+    screen_initMain("Testing...", 400, 400);	//open the main window
 
-    atexit(ainur_cleanEngine);
+    atexit(ainur_cleanEngine); 	//register cleanup code
 
     while(1) {
-        ainurio_SDLreceive();
-        SDL_Delay(16);
+        ainurio_SDLreceive();	//receive key input
+        SDL_Delay(16);			//delay/pause to save CPU
     }
 
     exit(EXIT_SUCCESS); //call cleanup code

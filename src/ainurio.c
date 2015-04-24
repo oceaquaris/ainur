@@ -4,15 +4,15 @@
  *  Created on: Apr 17, 2015
  *      Author: oceaquaris
  */
-#include "ainur.h"
-
-#include <SDL2/SDL.h>
-
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
 
 #include "ainurio.h"
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
+
 #include "debug.h"
 
 
