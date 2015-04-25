@@ -8,6 +8,7 @@
 #include "ainurio.h"
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <SDL2/SDL_events.h>
@@ -215,4 +216,85 @@ char *ainurio_shstrcat(char *destination, const char *source)
     strcat(destination, source); //concatenate the two strings
 
     return destination; //give us back the destination string!
+}
+
+
+/**
+ * @brief Receives input from the keyboard (stdin as a FILE) and outputs it as a string.
+ *
+ * @param inputstream
+ *        FILE to be read (stdin in most cases)
+ * @param size
+ *        Initial size of the output string to be allocated (for internal use).
+ *
+ * @return A null terminated string from input (input is terminated by carriage return).
+ * @note Return string needs to be free()ed; it is a heap variable.
+ */
+char *ainurio_rawInput(FILE *input, unsigned int size)
+{
+	//check to see if 'input' is valid
+	if(!input) {
+		#ifdef DEBUGGING
+        if(debugging) {
+            debug_fprintf("ainurio_rawInput() => formal param \'input\': %s\n", ERROR_NULL_POINTER);
+        }
+        #endif /*DEBUGGING*/
+        #ifdef VERBOSE
+        if(verbose) {
+            debug_printf("ainurio_rawInput() => formal param \'input\': %s\n", ERROR_NULL_POINTER);
+        }
+        #endif /*VERBOSE*/
+
+        return NULL;
+	}
+
+	char *string;		//string to be dynamically sized.
+	int character;
+	unsigned int length = 0;
+
+	//allocate data for 'string' with 'size' bytes of data
+	string = (char *)realloc(NULL, sizeof(char) * size);
+
+	if(!string) { //if string is still NULL
+		#ifdef DEBUGGING
+        if(debugging) {
+            debug_fprintf("ainurio_rawInput() => local char* \'string\': %s\n", ERROR_REALLOC);
+        }
+        #endif /*DEBUGGING*/
+        #ifdef VERBOSE
+        if(verbose) {
+            debug_printf("ainurio_rawInput() => local char* \'string\': %s\n", ERROR_REALLOC);
+        }
+        #endif /*VERBOSE*/
+
+        return string; //aka NULL
+	}
+
+	/* Loop through the input FILE until it encounters end of file or newline character. */
+	while(EOF != (character = fgetc(input)) && character != '\n') {
+		string[length++] = character;	//copy first character; increment index 'length'
+		if(length == size) {
+			//allocate more space in 16 byte chunks
+			string = (char *)realloc( string, sizeof(char)*(size += 16) );
+			if(!string) {
+				#ifdef DEBUGGING
+				if(debugging) {
+					debug_fprintf("ainurio_rawInput() => heap char* \'string\': %s\n", ERROR_REALLOC);
+					debug_fprintf("                      Error expanding \'string\'\n");
+				}
+				#endif /*DEBUGGING*/
+				#ifdef VERBOSE
+				if(verbose) {
+					debug_printf("ainurio_rawInput() => heap char* \'string\': %s\n", ERROR_REALLOC);
+					debug_printf("                      Error expanding \'string\'\n");
+				}
+				#endif /*VERBOSE*/
+
+				return string; //aka NULL
+			}
+		}
+	}
+	string[length++] = '\0';	//end string with null terminator
+
+	return (char *)realloc( string, sizeof(char) * length );	//return a string of precise length
 }

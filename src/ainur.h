@@ -8,11 +8,9 @@
 #ifndef AINUR_H_
 #define AINUR_H_
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_video.h>
 #include <lua.h>
+#include <SDL2/SDL_video.h>
 
-#include "debug.h"
 
 struct engine {
     SDL_Window *screen;

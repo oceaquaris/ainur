@@ -8,11 +8,12 @@
  */
 
 
-#include <stdlib.h>
+#include "file.h"
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "file.h"
 #include "debug.h"
 
 
@@ -96,7 +97,7 @@ int file_exists_in_directory(const char *directory, const char *filename)
  *
  * @return A string representing the path to the file.
  *
- * @note 'directory' needs a terminating '/'; the char* returned needs to be freed (stdlib: free())
+ * @note 'directory' needs a terminating '/'; the char* returned needs to be free()ed!
  */
 char *file_mkpath(const char *directory, const char *filename)
 {
