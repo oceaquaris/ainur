@@ -8,7 +8,6 @@
 #include "ainurio.h"
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <SDL2/SDL_events.h>
@@ -16,6 +15,21 @@
 
 #include "debug.h"
 
+
+//static functions
+static void ainurio_reset_keylog();
+//static variable needed for keylog
+static int keys_pressed[AINURIO_MAX_SDLRECEIVE];
+
+
+static void ainurio_reset_keylog()
+{
+	int i;
+	for(i = 0; i < AINURIO_MAX_SDLRECEIVE; i++) {
+		keys_pressed[i] = 0; //set everything to 0
+	}
+	return;
+}
 
 /**
  * @brief Receives input from keystrokes through SDL and executes appropriate tasks.
@@ -25,21 +39,25 @@
 int ainurio_SDLreceive()
 {
     SDL_Event event;
+    int index = 0;
 
-    while(SDL_PollEvent(&event)) {
+    ainurio_reset_keylog();
+
+    while(SDL_PollEvent(&event) && index < AINURIO_MAX_SDLRECEIVE) {
         switch(event.type) {
             case SDL_QUIT:
                 exit(0);
                 break;
 
             case SDL_KEYDOWN:
-                switch(event.key.keysym.sym) {
+				keys_pressed[index] = event.key.keysym.sym; //stash keystrokes in array
+                /*switch(event.key.keysym.sym) {
                     case SDLK_ESCAPE:
                         exit(0);
                         break;
                     default:
                         break;
-                }
+                }*/
                 break;
 
             default:
@@ -49,6 +67,22 @@ int ainurio_SDLreceive()
     }
 
     return 0;
+}
+
+/**
+ * @brief Runs through keys_pressed array and executes code based on which keys
+ *        were pressed.
+ */
+void ainurio_interpretKey()
+{
+	int i;
+	//make sure loop doesn't exceed array's length && the element isn't '0'
+	for(i = 0; i < AINURIO_MAX_SDLRECEIVE && keys_pressed[i]; i++) {
+		//TODO: convert from else if to non-testing array based solution
+		if(keys_pressed[i] == SDLK_ESCAPE) {
+			exit(0); //exit the program
+		}
+	}
 }
 
 

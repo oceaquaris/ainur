@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 
     while(1) {
         ainurio_SDLreceive();	//receive key input
+        ainurio_interpretKey(); //interpret keystroke
         SDL_Delay(16);			//delay/pause to save CPU
     }
 
