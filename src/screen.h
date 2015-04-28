@@ -14,6 +14,8 @@
 
 int screen_initSDL();
 int screen_initMain(const char *title, int width, int height);
+void screen_freeMain();
+
 void screen_dumpSDL_Surface(const char *label, SDL_Surface *surface);
 void screen_dumpSDL_PixelFormat(const char *label, SDL_PixelFormat *pixelformat);
 void screen_dumpSDL_Rect(const char *label, SDL_Rect *rect);

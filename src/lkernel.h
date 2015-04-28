@@ -19,7 +19,7 @@ char *lkernel_version();
 char *lkernel_release();
 char *lkernel_copyright();
 char *lkernel_authors();
-int lkernel_init();
+int lkernel_initLua();
 int lkernel_close();
 
 

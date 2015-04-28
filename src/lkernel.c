@@ -29,7 +29,7 @@ struct engine ainur;
  * @return 0: successful execution
  *         exit()s on program failure, for safety reasons
  */
-int lkernel_init()
+int lkernel_initLua()
 {
     ainur.lkernel = luaL_newstate();
     if(!(ainur.lkernel)) {

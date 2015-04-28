@@ -17,9 +17,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "ainurio.h"
 #include "debug.h"
+#include "font.h"
 #include "image.h"
 #include "lkernel.h"
 #include "screen.h"
@@ -53,10 +55,12 @@ int main(int argc, char *argv[])
         #endif /*VERBOSE*/
     }
 
-    lkernel_init();		//initialize Lua
+    lkernel_initLua();	//initialize Lua
     screen_initSDL();	//initialize SDL2
-    image_loadInit();	//initialize IMG (SDL2 extension)
+    image_initIMG();	//initialize IMG (SDL2 extension)
+    font_initTTF();		//initialize TTF (SDL2 extension)
 
+    font_initMain();							//initialize the default font
     screen_initMain("Testing...", 400, 400);	//open the main window
 
     atexit(ainur_cleanEngine); 	//register cleanup code
@@ -76,8 +80,14 @@ int main(int argc, char *argv[])
  */
 static void ainur_cleanEngine()
 {
-    SDL_Quit();
+	//functions are order dependent (reverse of loading)
+	screen_freeMain();
+	font_freeMain();
+    TTF_Quit();
     IMG_Quit();
+    SDL_Quit();
     lkernel_close();
     return;
 }
+
+//TODO: static function to load setting from home directory

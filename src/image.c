@@ -22,7 +22,7 @@
  * @return 0: program success
  *         exit()s program on failure.
  */
-int image_loadInit()
+int image_initIMG()
 {
     if( !IMG_Init(IMG_INIT_PNG /*0x00000002*/) ) { //if IMG_Init() fails
         #ifdef DEBUGGING

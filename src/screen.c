@@ -69,13 +69,13 @@ int screen_initMain(const char *title, int width, int height)
     if( !(ainur.screen) ) {
         #ifdef DEBUGGING
         if(debugging) {
-            debug_fprintf("screen_initMain() => SDL_SetVideoMode() => couldn\'t set screen mode to %dx%d: %s\n",
+            debug_fprintf("screen_initMain() => SDL_CreateWindow() => couldn\'t set screen mode to %dx%d: %s\n",
                           width, height, SDL_GetError());
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
         if(verbose) {
-            debug_printf("screen_initMain() => SDL_SetVideoMode() => couldn\'t set screen mode to %dx%d: %s\n",
+            debug_printf("screen_initMain() => SDL_CreateWindow() => couldn\'t set screen mode to %dx%d: %s\n",
                           width, height, SDL_GetError());
         }
         #endif /*VERBOSE*/
@@ -88,6 +88,18 @@ int screen_initMain(const char *title, int width, int height)
     return 0;
 }
 
+
+/**
+ * @brief Free the main SDL_Window
+ */
+void screen_freeMain()
+{
+	if(!(ainur.screen)) { //if screen was never initialized
+		return;
+	}
+	SDL_DestroyWindow(ainur.screen);
+	return;
+}
 
 
 /**

@@ -20,6 +20,6 @@ struct image {
 };
 
 SDL_Surface *image_load(const char *filename);
-int image_loadInit();
+int image_initIMG();
 
 #endif /* IMAGE_H_ */

@@ -17,6 +17,19 @@
 /* Switch to cut down on error messages. Can be deactivated to silence many debug_printf messages*/
 #define VERBOSE
 
+/* Template for debug code
+#ifdef DEBUGGING
+if(debugging) {
+	debug_fprintf("");
+}
+#endif /*DEBUGGING
+#ifdef VERBOSE
+if(verbose) {
+	debug_printf("");
+}
+#endif /*VERBOSE
+ */
+
 /**
  * @brief External variables associated with the log-book
  * @note Affected by DEBUGGING preprocessor option
