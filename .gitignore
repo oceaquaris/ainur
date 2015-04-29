@@ -35,5 +35,5 @@
 Debug/
 
 # Eclipse files
-.cproject
-.project
+#.cproject
+#.project
