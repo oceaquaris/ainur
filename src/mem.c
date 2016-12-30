@@ -24,12 +24,12 @@ void mem_free(unsigned int argc, ...)
 {
     if(!argc) { //if argc == 0
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("mem_free() => formal param \'argc\': Value less than 1\n");
         }
         #endif /* DEBUGGING */
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             debug_printf("mem_free() => formal param \'argc\': Value less than 1\n");
         }
         #endif /*VERBOSE*/

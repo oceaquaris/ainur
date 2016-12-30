@@ -12,15 +12,18 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#define LUA_SUCCESS 1
+#define LUA_FAILURE 0
+
 /**
  * Function declarations.
  */
-char *lkernel_version();
-char *lkernel_release();
-char *lkernel_copyright();
-char *lkernel_authors();
-int lkernel_initLua();
-int lkernel_close();
+char *lkernel_version(void);
+char *lkernel_release(void);
+char *lkernel_copyright(void);
+char *lkernel_authors(void);
+int lkernel_initLua(void);
+void lkernel_close(void);
 
 
 #endif /* LKERNEL_H_ */

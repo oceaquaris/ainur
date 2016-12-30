@@ -8,6 +8,7 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -16,43 +17,6 @@
 
 /* Switch to cut down on error messages. Can be deactivated to silence many debug_printf messages*/
 #define VERBOSE
-
-/* Template for debug code
-#ifdef DEBUGGING
-if(debugging) {
-	debug_fprintf("");
-}
-#endif /*DEBUGGING
-#ifdef VERBOSE
-if(verbose) {
-	debug_printf("");
-}
-#endif /*VERBOSE
- */
-
-/**
- * @brief External variables associated with the log-book
- * @note Affected by DEBUGGING preprocessor option
- */
-#ifdef DEBUGGING
-extern int debugging;
-extern const char *logbook_name;
-extern FILE *debug_logbook;
-extern time_t start_time;       //for printing time stamps
-#endif /*DEBUGGING*/
-#ifdef VERBOSE
-extern int verbose;
-#endif /*VERBOSE*/
-
-/**
- * Function declarations.
- */
-int debug_printf(const char *format, ...);      //analogous to printf
-
-#ifdef DEBUGGING
-int debug_fprintf(const char *format, ...);     //analogous to fprintf
-int debug_fputc(int character);                 //analogous to fputc
-#endif /*DEBUGGING*/
 
 /**
  * @brief Error messages.
@@ -66,5 +30,32 @@ extern const char *ERROR_NULL_FILE;
 extern const char *ERROR_NULL_POINTER;
 extern const char *ERROR_NULL_STRING;
 extern const char *ERROR_NULL_SDL_SURFACE;
+
+
+/**
+ * Function declarations.
+ */
+int debug_printf(const char *format, ...);      //analogous to printf
+int debug_vprintf(const char *format, va_list args);
+
+#if defined(DEBUGGING) || defined(VERBOSE)
+int debug_print(const char *format, ...);
+#endif
+
+#ifdef DEBUGGING
+void debug_debugOn(void);
+void debug_debugOff(void);
+int debug_getDebugStatus();
+int debug_fprintf(const char *format, ...);     //analogous to fprintf
+int debug_vfprintf(const char *format, va_list args);
+//int debug_fputc(int character);                 //analogous to fputc
+#endif /*DEBUGGING*/
+
+#ifdef VERBOSE
+void debug_verboseOn(void);
+void debug_verboseOff(void);
+int debug_getVerboseStatus(void);
+#endif
+
 
 #endif /* DEBUG_H_ */

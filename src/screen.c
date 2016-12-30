@@ -32,16 +32,19 @@ struct engine ainur;
 int screen_initSDL()
 {
     if( SDL_Init(SDL_INIT_EVERYTHING) < 0 ) { //if SDL_Init() has an error (not equal to 0)
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
-        }
-        #endif /*VERBOSE*/
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
+        #endif
+//         #ifdef DEBUGGING
+//         if(debug_getDebugStatus()) {
+//             debug_fprintf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
+//         }
+//         #endif /*DEBUGGING*/
+//         #ifdef VERBOSE
+//         if(debug_getVerboseStatus()) {
+//             debug_printf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
+//         }
+//         #endif /*VERBOSE*/
 
         exit(EXIT_FAILURE); //quit program & execute shutdown protocols
     }
@@ -68,13 +71,13 @@ int screen_initMain(const char *title, int width, int height)
 
     if( !(ainur.screen) ) {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("screen_initMain() => SDL_CreateWindow() => couldn\'t set screen mode to %dx%d: %s\n",
                           width, height, SDL_GetError());
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             debug_printf("screen_initMain() => SDL_CreateWindow() => couldn\'t set screen mode to %dx%d: %s\n",
                           width, height, SDL_GetError());
         }
@@ -109,11 +112,11 @@ void screen_freeMain()
 /*#ifdef VERBOSE
 int screen_initVerbose(int height, int width)
 {
-    if(verbose) {
+    if(debug_getVerboseStatus()) {
         ainur.verbose = SDL_SetVideoMode(width, height, 0, SDL_HWPALETTE|SDL_DOUBLEBUF);
         if( !(ainur.verbose) ) {
             #ifdef DEBUGGING
-            if(debugging) {
+            if(debug_getDebugStatus()) {
                 debug_fprintf("screen_initVerbose() => SDL_SetVideoMode() => couldn\'t set screen mode to %dx%d: %s\n",
                               width, height, SDL_GetError());
             }
@@ -138,12 +141,12 @@ void screen_dumpSDL_Surface(const char *label, SDL_Surface *surface)
 {
     if(!surface) {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("screen_dumpSDL_Surface() => formal parameter \'surface\': %s\n", ERROR_NULL_POINTER);
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             debug_printf("screen_dumpSDL_Surface() => formal parameter \'surface\': %s\n", ERROR_NULL_POINTER);
         }
         #endif /*VERBOSE*/
@@ -152,12 +155,12 @@ void screen_dumpSDL_Surface(const char *label, SDL_Surface *surface)
     }
     if(!label) {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("screen_dumpSDL_Surface() => formal parameter \'label\': %s\n", ERROR_NULL_STRING);
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             debug_printf("screen_dumpSDL_Surface() => formal parameter \'label\': %s\n", ERROR_NULL_STRING);
         }
         #endif /*VERBOSE*/
@@ -191,13 +194,13 @@ void screen_dumpSDL_Surface(const char *label, SDL_Surface *surface)
 
 
     #ifdef DEBUGGING
-    if(debugging) {
+    if(debug_getDebugStatus()) {
         debug_fprintf("Information on SDL_Surface %s:\n", label);
 
     }
     #endif /*DEBUGGING*/
     #ifdef VERBOSE
-    if(verbose) {
+    if(debug_getVerboseStatus()) {
 
     }
     #endif /*VERBOSE*/

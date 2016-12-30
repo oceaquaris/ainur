@@ -18,7 +18,6 @@ int font_initMain();
 void font_freeMain();
 SDL_Surface *font_draw(const char *text,
 					   TTF_Font *font,
-					   SDL_Color fontColor,
-					   SDL_Color bgColor);
+					   SDL_Color fontColor);
 
 #endif /* SRC_FONT_H_ */

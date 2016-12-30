@@ -11,78 +11,55 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_keycode.h>
 
 #include "debug.h"
 
 
 //static functions
-static void ainurio_reset_keylog();
-//static variable needed for keylog
-static int keys_pressed[AINURIO_MAX_SDLRECEIVE];
 
 
-static void ainurio_reset_keylog()
-{
-	int i;
-	for(i = 0; i < AINURIO_MAX_SDLRECEIVE; i++) {
-		keys_pressed[i] = 0; //set everything to 0
-	}
-	return;
-}
-
-/**
- * @brief Receives input from keystrokes through SDL and executes appropriate tasks.
- *
- * @return 0: program success
- */
-int ainurio_SDLreceive()
-{
+void ainurio_interpretInput(void) {
     SDL_Event event;
-    int index = 0;
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+    
+    //MUST USE SCANCODEs for this section!!!
+    if(state[SDL_SCANCODE_RETURN]) {
+        printf("<RETURN> is pressed.\n");
+    }
+    if(state[SDL_SCANCODE_RIGHT] && state[SDL_SCANCODE_UP]) {
+        printf("Right and Up Keys Pressed.\n");
+    }
+    if(state[SDL_SCANCODE_LCTRL] || state[SDL_SCANCODE_RCTRL]) {
+        printf("Ctrl is pressed.\n");
+    }
+    
 
-    ainurio_reset_keylog();
-
-    while(SDL_PollEvent(&event) && index < AINURIO_MAX_SDLRECEIVE) {
+    while( SDL_PollEvent(&event) ) {
         switch(event.type) {
             case SDL_QUIT:
                 exit(0);
                 break;
 
             case SDL_KEYDOWN:
-				keys_pressed[index] = event.key.keysym.sym; //stash keystrokes in array
-                /*switch(event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
+                switch(event.key.keysym.sym) {
+                    case SDLK_ESCAPE:   
                         exit(0);
                         break;
+
                     default:
                         break;
-                }*/
+                }
                 break;
 
+            //case SDL_MOUSEMOTION:
             default:
                 break;
 
         }
     }
-
-    return 0;
-}
-
-/**
- * @brief Runs through keys_pressed array and executes code based on which keys
- *        were pressed.
- */
-void ainurio_interpretKey()
-{
-	int i;
-	//make sure loop doesn't exceed array's length && the element isn't '0'
-	for(i = 0; i < AINURIO_MAX_SDLRECEIVE && keys_pressed[i]; i++) {
-		//TODO: convert from else if to non-testing array based solution
-		if(keys_pressed[i] == SDLK_ESCAPE) {
-			exit(0); //exit the program
-		}
-	}
+    return;
 }
 
 
@@ -101,20 +78,12 @@ void ainurio_interpretKey()
  * @note Returned string needs to be free()ed; it is a heap variable.
  * @note Does NOT free() strings fed into function as arguments.
  */
-char *ainurio_lhstrcat(unsigned int argc, ...)
-{
+char *ainurio_lhstrcat(unsigned int argc, ...) {
     if(!argc) { //if argc == 0
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_strlcat() => formal param 'argc': Value less than 1\n");
-        }
-        #endif /* DEBUGGING */
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_strlcat() => formal param 'argc': Value less than 1\n");
-        }
-        #endif /*VERBOSE*/
-
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_printf("ainurio_strlcat() => formal param 'argc': Value less than 1\n");
+        #endif /*defined(DEBUGGING) || defined(VERBOSE)*/
+        
         return NULL;
     }
 
@@ -139,17 +108,10 @@ char *ainurio_lhstrcat(unsigned int argc, ...)
     //size the string to length of all strings, plus null terminator.
     output = (char *)malloc( (collective_length * sizeof(char)) + sizeof(char) );
     if(!output) {
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_strlcat() => heap char* \'output\': %s\n", ERROR_MALLOC);
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_strlcat() => heap char* \'output\': %s\n", ERROR_MALLOC);
-        }
-        #endif /*VERBOSE*/
-
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_printf("ainurio_strlcat() => heap char* \'output\': %s\n", ERROR_MALLOC);
+        #endif /*defined(DEBUGGING) || defined(VERBOSE)*/
+        
         return NULL;
     }
 
@@ -169,9 +131,9 @@ char *ainurio_lhstrcat(unsigned int argc, ...)
  *        source string onto the destination string.
  *        @note Naming: sINGULARhEAPstrINGCONcatENATE
  *
- * @param destination
- *        Destination string to concatenate source onto.
- * @param source
+ * @param dest_hstr
+ *        Destination heap string to concatenate source onto.
+ * @param src
  *        Source string to concatenate onto destination.
  *
  * @return A concatenated string.
@@ -179,156 +141,91 @@ char *ainurio_lhstrcat(unsigned int argc, ...)
  * @note Returned string needs to be free()ed; it is a heap variable.
  * @note Does not free either the source nor the destination
  */
-char *ainurio_shstrcat(char *destination, const char *source)
-{
-    #if defined DEBUGGING || defined VERBOSE
-    if(!destination) {
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_shstrcat() => formal param \'destination\': %s\n", ERROR_NULL_POINTER);
-            debug_fprintf("                      Continuing on using NULL pointer in realloc()...");
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_shstrcat() => formal param \'destination\': %s\n", ERROR_NULL_POINTER);
-            debug_printf("                      Continuing on using NULL pointer in realloc()...");
-        }
-        #endif /*VERBOSE*/
-    }
-    if(!source) {
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_shstrcat() => formal param \'source\': %s\n", ERROR_NULL_POINTER);
-            debug_fprintf("                      Continuing on with realloc()...");
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_shstrcat() => formal param \'source\': %s\n", ERROR_NULL_POINTER);
-            debug_printf("                      Continuing on with realloc()...");
-        }
-        #endif /*VERBOSE*/
+char *ainurio_shstrcat(char *dest_hstr, const char *src) {
+    #if defined(DEBUGGING) || defined(VERBOSE)
+    if(!dest_hstr) {
+        debug_print("ainurio_shstrcat() => formal param 'dest_hstr': %s\n"\
+                    "                      Continuing on using NULL pointer in realloc()...",
+                    ERROR_NULL_POINTER);
     }
     #endif /*defined DEBUGGING || defined VERBOSE*/
-    if(!destination && !source) {
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_shstrcat() => formal params \'destination\' && \'source\': %ss\n", ERROR_NULL_POINTER);
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_shstrcat() => formal params \'destination\' && \'source\': %ss\n", ERROR_NULL_POINTER);
-        }
-        #endif /*VERBOSE*/
+    
+    if(!src) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("ainurio_shstrcat() => formal param 'src': %s\n", ERROR_NULL_POINTER);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
 
-        return NULL;
+        return dest_hstr;
     }
 
     //determine the lengths of the strings.
-    unsigned int dest = strlen(destination),
-                 src  = strlen(source);
+    unsigned int ldest = strlen(dest_hstr),
+                 lsrc  = strlen(src);
 
-    //reallocate memory
-    destination = (char *)realloc(destination, dest + src + sizeof(char));
-    if(!destination) { //check to see if allocation succeeded
-        #ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_shstrcat() => heap var \'destination\': %s\n", ERROR_REALLOC);
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_shstrcat() => heap var \'destination\': %s\n", ERROR_REALLOC);
-        }
-        #endif /*VERBOSE*/
+    //reallocate memory and check to see if allocation succeeded
+    if( !(dest_hstr = (char *)realloc(dest_hstr, sizeof(char)*(ldest+lsrc+1))) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("ainurio_shstrcat() => heap var 'dest_hstr': %s\n", ERROR_REALLOC);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
 
-        return NULL;
+        return dest_hstr; //aka NULL
     }
 
-    strcat(destination, source); //concatenate the two strings
+    strcat(dest_hstr, src); //concatenate the two strings
 
-    return destination; //give us back the destination string!
+    return dest_hstr;
 }
 
 
 /**
  * @brief Receives input from the keyboard (stdin as a FILE) and outputs it as a string.
  *
- * @param inputstream
+ * @param input
  *        FILE to be read (stdin in most cases)
- * @param size
- *        Initial size of the output string to be allocated (for internal use).
- *
+ * 
  * @return A null terminated string from input (input is terminated by carriage return).
  * @note Return string needs to be free()ed; it is a heap variable.
  */
-char *ainurio_rawInput(FILE *input, unsigned int size)
-{
-	//check to see if 'input' is valid
-	if(!input) {
-		#ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_rawInput() => formal param \'input\': %s\n", ERROR_NULL_POINTER);
-        }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_rawInput() => formal param \'input\': %s\n", ERROR_NULL_POINTER);
-        }
-        #endif /*VERBOSE*/
+#define RAWINPUT_SIZE   16 //cannot equal zero!!!
+char *ainurio_rawInput(FILE *input) {
+    if(!input) { //check to see if 'input' is valid
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("ainurio_rawInput() => formal param 'input': %s\n", ERROR_NULL_POINTER);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
 
         return NULL;
-	}
+    }
 
-	char *string;		//string to be dynamically sized.
-	int character;
-	unsigned int length = 0;
+    char *str;  //string to be dynamically sized.
+    int c,      //character
+        size = RAWINPUT_SIZE;   //initial array size length
+    unsigned int len = 0;
 
-	//allocate data for 'string' with 'size' bytes of data
-	string = (char *)realloc(NULL, sizeof(char) * size);
+    //allocate data for 'str' with 'size' bytes of data; and if 'str' is NULL
+    if( !(str = (char *)malloc(sizeof(char) * size)) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("ainurio_rawInput() => local char* 'str': %s\n", ERROR_REALLOC);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
 
-	if(!string) { //if string is still NULL
-		#ifdef DEBUGGING
-        if(debugging) {
-            debug_fprintf("ainurio_rawInput() => local char* \'string\': %s\n", ERROR_REALLOC);
+        return str; //aka NULL
+    }
+
+    /* Loop through the input FILE until it encounters end of file or newline character. */
+    while(EOF != (c = fgetc(input)) && c != '\n') {
+        str[len++] = c;	//copy first character; increment index 'len'
+        if(len == size) {
+            //allocate more space in 16 byte chunks; check if allocation succeeded
+            if( !(str = (char *)realloc( str, sizeof(char)*(size += 16) )) ) {
+                #if defined(DEBUGGING) || defined(VERBOSE)
+                debug_print("ainurio_rawInput() => heap char* 'str': %s\n"\
+                            "                      Error expanding 'str'\n", ERROR_REALLOC);
+                #endif /*defined DEBUGGING || defined VERBOSE*/
+
+                return str; //aka NULL
+            }
         }
-        #endif /*DEBUGGING*/
-        #ifdef VERBOSE
-        if(verbose) {
-            debug_printf("ainurio_rawInput() => local char* \'string\': %s\n", ERROR_REALLOC);
-        }
-        #endif /*VERBOSE*/
+    }
+    str[len++] = '\0';   //end str with null terminator
 
-        return string; //aka NULL
-	}
-
-	/* Loop through the input FILE until it encounters end of file or newline character. */
-	while(EOF != (character = fgetc(input)) && character != '\n') {
-		string[length++] = character;	//copy first character; increment index 'length'
-		if(length == size) {
-			//allocate more space in 16 byte chunks
-			string = (char *)realloc( string, sizeof(char)*(size += 16) );
-			if(!string) {
-				#ifdef DEBUGGING
-				if(debugging) {
-					debug_fprintf("ainurio_rawInput() => heap char* \'string\': %s\n", ERROR_REALLOC);
-					debug_fprintf("                      Error expanding \'string\'\n");
-				}
-				#endif /*DEBUGGING*/
-				#ifdef VERBOSE
-				if(verbose) {
-					debug_printf("ainurio_rawInput() => heap char* \'string\': %s\n", ERROR_REALLOC);
-					debug_printf("                      Error expanding \'string\'\n");
-				}
-				#endif /*VERBOSE*/
-
-				return string; //aka NULL
-			}
-		}
-	}
-	string[length++] = '\0';	//end string with null terminator
-
-	return (char *)realloc( string, sizeof(char) * length );	//return a string of precise length
+    return (char *)realloc( str, sizeof(char) * len );    //return a string of precise length
 }

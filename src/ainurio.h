@@ -11,12 +11,11 @@
 #include <stdio.h>
 
 //receive a maximum of 16 keys pressed simultaneously
-#define AINURIO_MAX_SDLRECEIVE	16
+#define AINURIO_MAX_SDLRECEIVE  4
 
-int ainurio_SDLreceive();
-void ainurio_interpretKey();
+void ainurio_interpretInput(void);
 char *ainurio_lhstrcat(unsigned int argc, ...);
 char *ainurio_shstrcat(char *destination, const char *source);
-char *ainurio_rawInput(FILE *input, unsigned int size);
+char *ainurio_rawInput(FILE *input);
 
 #endif /* AINURIO_H_ */

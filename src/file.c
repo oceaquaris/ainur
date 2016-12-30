@@ -17,6 +17,7 @@
 #include "debug.h"
 
 
+
 /**
  * @brief Determines if a filename is valid
  *
@@ -25,8 +26,7 @@
  *
  * @return File exists: 1; File does not exist: 0
  */
-int file_exists(const char *filename)
-{
+int file_exists(const char *filename) {
     //attempt to open file with name 'filename'
     FILE *file = fopen(filename, "r");
 
@@ -37,22 +37,15 @@ int file_exists(const char *filename)
     }
 
     //Protocols for debugging
-    #ifdef DEBUGGING
-    if (debugging) {
-        //write a debug message
-        debug_fprintf("file_exists() => File \"%s\": %s\n", filename, ERROR_NO_FILE);
-    }
-    #endif /*DEBUGGING*/
-    #ifdef VERBOSE
-    if(verbose) {
-        //print an error message to the terminal
-        debug_printf("file_exists() => File \"%s\": No such file or directory\n", filename);
-    }
-    #endif /*VERBOSE*/
+    #if defined(DEBUGGING) || defined(VERBOSE)
+    debug_print("file_exists() => File \"%s\": %s\n", filename, ERROR_NO_FILE);
+    #endif /*defined DEBUGGING || defined VERBOSE*/
 
-    //return 0, false, if the pointer is NULL
+    //return 0, false, if the pointer is NULL or file does not exist
     return 0;
 }
+
+
 
 /**
  * @brief Determines if a file in a directory is valid.
@@ -64,8 +57,7 @@ int file_exists(const char *filename)
  *
  * @return 1: File exists; 0: File does not exist
  */
-int file_exists_in_directory(const char *directory, const char *filename)
-{
+int file_exists_in_directory(const char *directory, const char *filename) {
     char *path = file_mkpath(directory, filename);  //create path name (heap variable)
 
     if(path && file_exists(path)) { //test if path was created successfully
@@ -87,6 +79,8 @@ int file_exists_in_directory(const char *directory, const char *filename)
     return 0;       //return 0, false
 }
 
+
+
 /**
  * @brief Concatenates a directory name followed by a file name.
  *
@@ -99,12 +93,11 @@ int file_exists_in_directory(const char *directory, const char *filename)
  *
  * @note 'directory' needs a terminating '/'; the char* returned needs to be free()ed!
  */
-char *file_mkpath(const char *directory, const char *filename)
-{
+char *file_mkpath(const char *directory, const char *filename) {
     //test and determine if 'directory' or 'filename' is NULL
     if ( !directory || !filename ) {
         #ifdef DEBUGGING
-        if( !directory && debugging) { //if 'directory' is NULL and we're debugging
+        if( !directory && debug_getDebugStatus()) { //if 'directory' is NULL and we're debugging
             //add entry to log-file
             debug_fprintf("file_mkpath => formal parameter \'directory\': %s\n", ERROR_NULL_STRING);
 
@@ -114,7 +107,7 @@ char *file_mkpath(const char *directory, const char *filename)
             #endif /*VERBOSE*/
         }
         //if 'filename' is NULL and we're debugging
-        if( !filename && debugging) {
+        if( !filename && debug_getDebugStatus()) {
             //add entry to log-file
             debug_fprintf("file_mkpath => formal parameter \'filename\': %s\n", ERROR_NULL_STRING);
 
@@ -133,7 +126,7 @@ char *file_mkpath(const char *directory, const char *filename)
     //test to see if the directory is '/' terminated
     if(directory[dirlen-1] != '/') {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             //add entry to log-file
             debug_fprintf("file_mkpath() => parameter \'directory\': string not \'/\' terminated\n");
 
@@ -153,7 +146,7 @@ char *file_mkpath(const char *directory, const char *filename)
 
     if(!output) { //check to see if the heap allocated the data
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("file_mkpath() => heap char* \'output\': %s\n", ERROR_MALLOC);
         }
         #ifdef VERBOSE
@@ -170,6 +163,8 @@ char *file_mkpath(const char *directory, const char *filename)
     return output;
 }
 
+
+
 /**
  * @brief Opens a file.
  *
@@ -180,11 +175,10 @@ char *file_mkpath(const char *directory, const char *filename)
  *
  * @return A pointer to a FILE struct.
  */
-FILE *file_open(const char *filename, const char *mode)
-{
+FILE *file_open(const char *filename, const char *mode) {
     if(!filename || !mode) {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             if(!filename) {
                 debug_fprintf("file_open => formal param \'filename\': %s\n", ERROR_NULL_STRING);
             }
@@ -194,7 +188,7 @@ FILE *file_open(const char *filename, const char *mode)
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             if(!filename) {
                 debug_printf("file_open => formal param \'filename\': %s\n", ERROR_NULL_STRING);
             }
@@ -213,12 +207,12 @@ FILE *file_open(const char *filename, const char *mode)
 
     if(!file) {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("file_open() => local FILE* \'file\': %s\n", ERROR_NULL_FILE);
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             debug_printf("file_open() => local FILE* \'file\': %s\n", ERROR_NULL_FILE);
         }
         #endif /*VERBOSE*/
@@ -228,6 +222,8 @@ FILE *file_open(const char *filename, const char *mode)
 
     return file;
 }
+
+
 
 /**
  * @NOTE: Construction still in process!!!!!!!!
@@ -239,16 +235,15 @@ FILE *file_open(const char *filename, const char *mode)
  *
  * @return 1: successfully loaded; 0: unsuccessfully loaded
  */
-int file_load(const char *filename)
-{
+int file_load(const char *filename) {
     if(!filename) {
         #ifdef DEBUGGING
-        if(debugging) {
+        if(debug_getDebugStatus()) {
             debug_fprintf("file_load() => formal param \'filename\': %s\n", ERROR_NULL_STRING);
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        if(verbose) {
+        if(debug_getVerboseStatus()) {
             debug_printf("file_load() => formal param \'filename\': %s\n", ERROR_NULL_STRING);
         }
         #endif /*VERBOSE*/
@@ -263,8 +258,9 @@ int file_load(const char *filename)
     return 1;
 }
 
-int file_load_from_directory(const char *directory, const char *filename)
-{
+
+
+int file_load_from_directory(const char *directory, const char *filename) {
 
 
     return 1;

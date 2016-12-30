@@ -41,34 +41,31 @@ int main(int argc, char *argv[])
     int arg;
     for (arg = 1; arg < argc; arg++) {
         #ifdef DEBUGGING //if compiled with debug options
-        if (strcmp(argv[arg], "-debug") == 0) {
-            debugging = 1;                              //set option to 1 (true)
-            debug_logbook = fopen(logbook_name, "w");   //assign pointers and create file
-            fclose(debug_logbook);                      //close file for safety
-            //time(&current_time);                        //get the current time for debug
+        if (strcmp(argv[arg], "--debug") == 0) {
+            debug_debugOn();
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
-        else if (strcmp(argv[arg], "-verbose") == 0) {
-            verbose = 1;
+        else if (strcmp(argv[arg], "--verbose") == 0) {
+            debug_verboseOn();
         }
         #endif /*VERBOSE*/
     }
 
-    lkernel_initLua();	//initialize Lua
-    screen_initSDL();	//initialize SDL2
-    image_initIMG();	//initialize IMG (SDL2 extension)
-    font_initTTF();		//initialize TTF (SDL2 extension)
+    lkernel_initLua();  //initialize Lua
+    screen_initSDL();   //initialize SDL2
+    image_initIMG();    //initialize IMG (SDL2 extension)
+    font_initTTF();     //initialize TTF (SDL2 extension)
 
-    font_initMain();							//initialize the default font
-    screen_initMain("Testing...", 400, 400);	//open the main window
+    font_initMain();                            //initialize the default font
+    screen_initMain("Testing...", 400, 400);    //open the main window
 
-    atexit(ainur_cleanEngine); 	//register cleanup code
+    atexit(ainur_cleanEngine);  //register cleanup code
 
     while(1) {
-        ainurio_SDLreceive();	//receive key input
-        ainurio_interpretKey(); //interpret keystroke
-        SDL_Delay(16);			//delay/pause to save CPU
+        //ainurio_SDLreceive();   //receive key input
+        ainurio_interpretInput(); //interpret keystroke
+        SDL_Delay(16);          //delay/pause to save CPU
     }
 
     exit(EXIT_SUCCESS); //call cleanup code
@@ -80,9 +77,9 @@ int main(int argc, char *argv[])
  */
 static void ainur_cleanEngine()
 {
-	//functions are order dependent (reverse of loading)
-	screen_freeMain();
-	font_freeMain();
+    //functions are order dependent (reverse of loading)
+    screen_freeMain();
+    font_freeMain();
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
