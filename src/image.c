@@ -3,6 +3,19 @@
  *
  *  Created on: Apr 21, 2015
  *      Author: oceaquaris
+ *
+ * Field Overview:
+ *  static:
+ *      struct image **images
+ *      image_compare
+ *  extern:
+ *      image_bsearch
+ *      image_free
+ *      image_initIMG
+ *      image_load
+ *      image_load_surface
+ *      image_num_loaded
+ *      image_qsort
  */
 
 
@@ -16,6 +29,68 @@
 #include "image.h"
 #include "file.h"
 
+/*
+ * Statically allocated variable to hold all created image variables.
+ */
+static struct image **images = NULL;
+
+
+
+/**
+ * @brief Wrapper function that performs a comparison on the strings two struct image *'s.
+ *
+ * @param p1
+ *        A pointer to a (struct image *) to be compared.
+ * @param p2
+ *        A pointer to a (struct image *) to be compared.
+ *
+ * @return < 0: p1 has a lower 'tag' string value than p2.
+ *         = 0: p1 and p2 have the same 'tag' label.
+ *         > 0: p1 has a higher 'tag' string value than p2.
+ */
+static int image_compare(const void *p1, const void *p2) {
+    return strcmp( ((struct image *)p1)->tag, ((struct image *)p2)->tag );
+}
+
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+
+
+/**
+ * @brief A wrapper function to perform a binary search on the elements in the static struct image
+ *        **images in image.c.
+ *        Retrieve an element, if one exists, that has the 'tag', 'tag' within it.
+ * @param tag
+ *        The 'tag' of the (struct image *) to search for.
+ * @return A pointer to the (struct image *) with the correct 'tag', or NULL (no match).
+ */
+struct image *image_bsearch(const char *tag) {
+    return (struct image *)bsearch( tag, images, image_num_loaded(), sizeof(struct image *), image_compare );
+}
+
+
+
+void image_free(struct image *image) {
+    if( !image ) { return; }    //check to see if our image is valid
+
+    //free elements if available
+    if( image->tag ) {
+        free(image->tag);
+    }
+    if( image->filename ) {
+        free(image->filename);
+    }
+    SDL_FreeSurface(image->surface);
+
+    return;
+}
+
+
+
 /**
  * @brief Initializes SDL's image loading library.
  *
@@ -25,18 +100,91 @@
 int image_initIMG(void) {
     int flags  = IMG_INIT_PNG;
     int loaded = IMG_Init(IMG_INIT_PNG); //0x00000002
-    
+
     if( (loaded&flags) != flags) { //if IMG_Init() fails
         #if defined(DEBUGGING) || defined(VERBOSE)
         debug_print("image_initIMG: IMG_Init error: Failed to initialize required png support.\n"\
                     "image_initIMG: IMG_Init error: %s\n", IMG_GetError());
         #endif /*defined DEBUGGING || defined VERBOSE*/
-        
+
         exit(EXIT_FAILURE); //close program and free everything.
     }
 
     return IMAGE_SUCCESS; //success
 }
+
+
+
+struct image *image_load(const char *filename, const char *tag) {
+    //first, attempt to load an SDL_Surface.
+    SDL_Surface *surface = image_load_surface(filename);
+    if(!surface) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("image_load: Unable to load image: %s.\n", filename);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        return NULL;
+    }
+    
+    //second, attempt to create a new struct image.
+    struct image *load = NULL;
+
+    //attempt to allocate memory for the struct image
+    if( !(load = malloc( sizeof(struct image) ))  ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("image_load: Unable to allocate enough memory for new struct image: %s.\n", tag);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        return load; //aka NULL
+    }
+
+    size_t length = strlen(tag);    //'length' will store the lengths of 'tag' and 'filename'
+
+    //attempt to allocate memory for the (char *) field 'tag' in the struct image
+    if ( !(load->tag = malloc( sizeof(char) * (length + 1) )) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("image_load: Unable to allocate enough memory for (%s)->tag.\n", tag);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        image_free(load);   //free up memory
+        return NULL;
+    }
+    //copy 'tag' to load->tag
+    memcpy( load->tag, tag, sizeof(char) * (length + 1) );
+
+    length = strlen(filename);  //reassign the length to that of 'filename'
+
+    //attempt to allocate memory for the (char *) field 'filename' in the struct image
+    if( !(load->filename = malloc( sizeof(char) * (length + 1) )) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("image_load: Unable to allocate enough memory for (%s)->filename.\n", tag);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        image_free(load);   //free up memory
+        return NULL;
+    }
+    //copy 'filename' to load->filename
+    memcpy( load->filename, tag, sizeof(char) * (length + 1) );
+
+    //third, attempt to extend the length of the statically allocated struct image **images
+    int numloads = image_num_loaded();
+    if ( !( images = realloc(images, (numloads + 2) * (sizeof(struct image *) ) ) ) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("image_load: Unable to reallocate enough memory to resize static struct images **images.\n");
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        free(load); //free up memory
+        return NULL;
+    }
+
+    images[numloads] = load;        //insert new image into array
+    images[numloads + 1] = NULL;    //attach new NULL terminator
+
+    image_qsort();  //sort the array for future use.
+
+    return load;    //return a pointer to the newly created and archived struct image.
+}
+
 
 
 /**
@@ -51,10 +199,10 @@ int image_initIMG(void) {
  *
  * @note As always, output SDL_Surface needs to be SDL_FreeSurface()ed.
  */
-SDL_Surface *image_load(const char *filename) {
+SDL_Surface *image_load_surface(const char *filename) {
     if( !file_exists(filename) ) {
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: formal param 'filename'(%s): %s\n", filename, ERROR_NO_FILE);
+        debug_print("image_load_surface: formal param 'filename'(%s): %s\n", filename, ERROR_NO_FILE);
         #endif /*defined DEBUGGING || defined VERBOSE*/
 
         return NULL;
@@ -64,9 +212,9 @@ SDL_Surface *image_load(const char *filename) {
 
     if(!temp) {
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: IMG_Load error: %s\n", IMG_GetError());
+        debug_print("image_load_surface: IMG_Load error: %s\n", IMG_GetError());
         #endif /*defined DEBUGGING || defined VERBOSE*/
-        
+
         return temp;    //aka NULL
     }
 
@@ -82,7 +230,7 @@ SDL_Surface *image_load(const char *filename) {
 
     if(!output) {
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: local var 'output': %s\n"\
+        debug_print("image_load_surface: local var 'output': %s\n"\
                     "            SDL error: %s\n", ERROR_NULL_SDL_SURFACE, SDL_GetError() );
         #endif /*defined DEBUGGING || defined VERBOSE*/
 
@@ -92,4 +240,27 @@ SDL_Surface *image_load(const char *filename) {
     SDL_FreeSurface(temp);  //Free our temporary variable
 
     return output;
+}
+
+
+
+/**
+ * @brief Determines the number of images currently loaded in the engine.
+ * 
+ * @return The length static struct image **images in image.c.
+ */
+size_t image_num_loaded(void) {
+    size_t i;
+    for(i = 0; images[i]; i++);
+    return i;
+}
+
+
+
+/**
+ * @brief A wrapper function to sort the elements in the static struct image **images in image.c.
+ */
+void image_qsort(void) {
+    qsort( images, image_num_loaded(), sizeof(struct image *), image_compare );
+    return;
 }
