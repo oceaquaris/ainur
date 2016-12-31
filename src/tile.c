@@ -1,13 +1,66 @@
 /**
  * @file tile.c
+ * 
+ * Field Overview:
+ *  static:
+ *      struct tile **tiles
+ *      tile_compare
+ *  extern:
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 
 #include "debug.h"
 #include "image.h"
 #include "tile.h"
+
+/*
+ * Statically allocated variable to hold all created tile structs.
+ * This is NULL terminated.
+ */
+static struct tile **tiles = NULL;
+
+
+
+static int tile_compare(const void *p1, const void *p2) {
+    return strcmp( ((struct tile **)p1)[0]->tag, ((struct tile **)p2)[0]->tag );
+}
+
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+
+
+struct tile **tile_bsearch(const char *tag) {
+    return (struct tile **)bsearch( tag,
+                                    tiles,
+                                    tile_num_registered(),
+                                    sizeof(struct tile *),
+                                    tile_compare );
+}
+
+
+
+struct tile *tile_create(const char *image_tag, int x, int y, int width, int height, const char *tag) {
+    struct image *image = image_bsearch(image_tag);
+    if(!image) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("tile_create: Unable to create tile: %s\n"\
+                    "             Image not found.\n", tag);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        return NULL;
+    }
+
+    return tile_create_fromImage( image[0], x, y, width, height, tag );
+}
+
+
 
 /**
  * @brief Creates a tile struct containing a source image surface and coordinates
@@ -26,26 +79,137 @@
  * 
  * @return A tile struct with a source image and coordinates to the tile.
  */
-struct tile *tile_create( SDL_Surface *src, int x, int y, int width, int height ) {
-    struct tile *output;
-    SDL_Rect rect;
-    
-    //allocate mem for tile; check if allocation was successful
-    if( !(output = (struct tile *)malloc(sizeof(struct tile))) ) { //TODO: debug
+struct tile *tile_create_fromImage( struct image *src, int x, int y, int width, int height, const char *tag ) {
+    //'tag' cannot be NULL!!!
+    if(!tag) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("tile_create_fromImage: Unable to load image: %s.\n"\
+                    "             formal param 'tag' is NULL.\n", filename);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
         return NULL;
     }
-    
-    //put variables inside rect
-    rect.x = x;
-    rect.y = y;
-    rect.w = width;
-    rect.h = height;
-    
-    output->source = src;   //SDL_Surface should already be a heap variable
-    output->region = rect;
-    
+
+    //'tag' must be unique!!!
+    if( tile_bsearch(tag) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("tile_create_fromImage: Unable to load image: %s.\n"\
+                    "             formal param 'tag' is not unique.\n", filename);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        return NULL;
+    }
+
+    struct tile *output;
+
+    //allocate mem for tile; check if allocation was successful
+    if( !(output = (struct tile *)malloc(sizeof(struct tile))) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("tile_create_fromImage: Unable to allocate memory for new (struct image *): %s\n", tag);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        return NULL;
+    }
+
+    //put coordinates inside rect
+    output->rect.x = x;
+    output->rect.y = y;
+    output->rect.w = width;
+    output->rect.h = height;
+    //put image source in tile struct
+    output->src = src;
+
+    //attempt to allocate memory for 'tag' string
+    size_t length = strlen(tag);
+    if( !(output->tag = malloc( sizeof(char) * (length + 1) )) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("tile_create_fromImage: Unable to allocate memory for new (struct tile *): %s\n", tag);
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        tile_free(output);
+        return NULL;
+    }
+    //copy 'tag' to output->tag
+    memcpy(output->tag, tag, sizeof(char) * (length + 1));
+
+    //attempt to allocate more memory for the tile array
+    length = tile_num_registered();
+    if( !(tiles = realloc(tiles, sizeof(struct tile *) * (length + 2))) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("tile_create_fromImage: Unable to allocate more memory for struct tile **tiles.\n");
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        tile_free(output);
+        return NULL;
+    }
+
+    tiles[length] = output;     //add the new tile to the end of the array
+    tiles[length + 1] = NULL;   //add new NULL terminator
+
+    tile_qsort();   //resort the list
+
     return output;
 }
+
+
+
+/**
+ * @brief Free's a tile struct.
+ * @param tile
+ *        tile struct to be free'd.
+ */
+void tile_free(struct tile *tile) {
+    if(!tile) { return; }
+
+    if(tile->tag) {
+        free(tile->tag);
+    }
+
+    free(tile);
+    return;
+}
+
+
+
+size_t tile_num_registered(void) {
+    size_t i;
+    for(i = 0; tiles[i]; i++);
+    return i;
+}
+
+
+
+void tile_qsort(void) {
+    qsort( tiles,
+           tile_num_registered(),
+           sizeof(struct tile *),
+           tile_compare );
+    return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -123,25 +287,6 @@ struct tile **tile_extractFromImage(const char *filename, int std_h, int std_w )
     }
     
     return tile_extractFromSurface(surf, std_h, std_w);
-}
-
-
-
-/**
- * @brief Free's a tile struct.
- * @param tile
- *        tile struct to be free'd.
- */
-void tile_free(struct tile *tile) {
-    if(!tile)
-        return;
-    
-    if(tile->source) {
-        SDL_FreeSurface(tile->source);
-    }
-    
-    free(tile);
-    return;
 }
 
 
