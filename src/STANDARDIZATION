@@ -1,0 +1,41 @@
+STANDARDIZATION among ainur source code
+
+Function Naming:
+    * A function is to be named with the prefix '<file>_' to denote the
+      origin of a that function.
+
+          For example, functions in ainur.c may be named:
+            - ainur_red()
+            - ainur_blue()
+            - ainur_green()
+
+    * If a function is to be part of a group, use a '_' to separate prefix
+      and suffixes.
+
+          For example:
+            - ainur_paint_red()
+            - ainur_paint_blue()
+            - ainur_paint_green()
+
+    * Function suffixes are to be named using camelCase.
+
+          For example:
+            - ainur_blackWhite()
+            - ainur_redGreen()
+            - ainur_blueOrange()
+
+
+Library / Variable initialization/termination
+    * If a library and/or a variable needs to be initialized before use, a
+      function should be named with the name: '<file>[_<lib,var>]_init()'
+      ( [_<lib,var>] is optional )
+
+          For example, to initialize the ainur library:
+            - ainur_init()
+
+    * If a library and/or a variable needs to be terminated after use, a
+      function should be named with the name: '<file>[_<lib,var>]_close()'
+      ( [_<lib,var>] is optional )
+
+          For example, to terminate the ainur library:
+            - ainur_close()

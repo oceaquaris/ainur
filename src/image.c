@@ -6,12 +6,12 @@
  *
  * Field Overview:
  *  static:
- *      struct image **images
  *      image_compare
  *  extern:
  *      image_bsearch
  *      image_free
  *      image_freeAll
+ *      image_freeTag
  *      image_initIMG
  *      image_load
  *      image_loadSDL_Surface
@@ -29,11 +29,6 @@
 #include "debug.h"
 #include "image.h"
 #include "file.h"
-
-/*
- * Statically allocated variable to hold all created image variables.
- */
-static struct image **images = NULL;
 
 
 
@@ -62,15 +57,30 @@ static int image_compare(const void *p1, const void *p2) {
 
 
 /**
- * @brief A wrapper function to perform a binary search on the elements in the static struct image
- *        **images in image.c.
+ * @brief A wrapper function to perform a binary search on 'images' in the ainur engine.
  *        Retrieve an element, if one exists, that has the 'tag', 'tag' within it.
  * @param tag
  *        The 'tag' of the (struct image *) to search for.
  * @return A pointer to the array position with the correct 'tag', or NULL (no match).
  */
 struct image **image_bsearch(const char *tag) {
-    return (struct image **)bsearch( tag, images, image_num_loaded(), sizeof(struct image *), image_compare );
+    if(!ainur.images) { return NULL; }  //make sure 'images' isn't NULL
+
+    return (struct image **)bsearch( tag,
+                                     ainur.images,
+                                     image_num_loaded(),
+                                     sizeof(struct image *),
+                                     image_compare );
+}
+
+
+
+/**
+ * @brief Wrapper function to perform cleanup protocols for image functionalities.
+ */
+void image_close(void) {
+    image_freeAll();
+    return;
 }
 
 
@@ -81,7 +91,7 @@ struct image **image_bsearch(const char *tag) {
  * @param image
  *        Pointer to image struct to free.
  */
-void image_free(struct image *image) {
+void image_free(struct image *image) { //FIXME: may want to make this static & eliminate 'images' checking
     if( !image ) { return; }    //check to see if our image is valid
 
     //free elements if available
@@ -99,16 +109,17 @@ void image_free(struct image *image) {
 
 
 /**
- * @brief Free all images in the statically allocated struct image **images in image.c.
+ * @brief Free all images in the ainur engine.
  */
 void image_freeAll(void) {
-    if(!images) { return; } //test to see if 'images' is valid
+    if(!ainur.images) { return; } //test to see if 'images' is valid
 
-    size_t len = image_num_loaded();
-    for(len--; len >= 0; len--) {
-        image_free(images[len]);
+    size_t len;
+    for(len = image_num_loaded(); len > 0; len--) {
+        image_free(ainur.images[len-1]);
     }
-    free(images);
+
+    free(ainur.images);
     return;
 }
 
@@ -130,11 +141,11 @@ void image_freeTag(const char *tag) {
 
     image_free(image[0]);   //free the image that we found.
 
-    image[0] = images[length - 1];  //copy a reference to the last image in 'images' where our freed image was.
-    images[length - 1] = NULL;      //make the last reference in 'images' NULL
+    image[0] = ainur.images[length - 1];  //copy a reference to the last image in 'images' where our freed image was.
+    ainur.images[length - 1] = NULL;      //make the last reference in 'images' NULL
 
     //attempt to resize the 'images' array
-    if( !( images = realloc(images, length * (sizeof(struct image *) ) ) ) ) {
+    if( !( ainur.images = realloc(ainur.images, length * (sizeof(struct image *) ) ) ) ) {
         #if defined(DEBUGGING) || defined(VERBOSE)
         debug_print("image_freeTag: Unable to reallocate enough memory to resize static struct images **images.\n");
         #endif /*defined DEBUGGING || defined VERBOSE*/
@@ -168,6 +179,18 @@ int image_initIMG(void) {
         exit(EXIT_FAILURE); //close program and free everything.
     }
 
+    //attempt to allocate memory for the 'images' array
+    if( !(ainur.images = malloc(sizeof(struct image *))) ) {
+        #if defined(DEBUGGING) || defined(VERBOSE)
+        debug_print("image_initIMG: IMG_Init error: Unable to allocate memory for struct tile **tiles.\n");
+        #endif /*defined DEBUGGING || defined VERBOSE*/
+
+        exit(EXIT_FAILURE); //close program and free everything.
+    }
+
+    //make the first element in the 'images' array to be a NULL terminator
+    ainur.images[0] = NULL;
+
     return IMAGE_SUCCESS; //success
 }
 
@@ -175,7 +198,8 @@ int image_initIMG(void) {
 
 /**
  * @brief Load an image as an SDL_Surface from a 'filename' and stash it into an
- *        image struct. Stash the image struct into the static variable 'images'.
+ *        image struct. Stash the image struct into the 'images' variable in the
+ *        ainur engine.
  * @param filename
  *        Name/path of the file to load.
  * @param tag
@@ -255,17 +279,17 @@ struct image *image_load(const char *filename, const char *tag) {
 
     //third, attempt to extend the length of the statically allocated struct image **images
     int numloads = image_num_loaded();
-    if ( !( images = realloc(images, (numloads + 2) * (sizeof(struct image *) ) ) ) ) {
+    if ( !( ainur.images = realloc(ainur.images, (numloads + 2) * (sizeof(struct image *) ) ) ) ) {
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to reallocate enough memory to resize static struct images **images.\n");
+        debug_print("image_load: Unable to reallocate enough memory to resize ainur.(struct images **images).\n");
         #endif /*defined DEBUGGING || defined VERBOSE*/
 
         free(load); //free up memory
         return NULL;
     }
 
-    images[numloads] = load;        //insert new image into array
-    images[numloads + 1] = NULL;    //attach new NULL terminator
+    ainur.images[numloads] = load;        //insert new image into array
+    ainur.images[numloads + 1] = NULL;    //attach new NULL terminator
 
     image_qsort();  //sort the array for future use.
 
@@ -334,20 +358,21 @@ SDL_Surface *image_loadSDL_Surface(const char *filename) {
 /**
  * @brief Determines the number of images currently loaded in the engine.
  * 
- * @return The length static struct image **images in image.c.
+ * @return The length of ainur.(struct image **images).
  */
 size_t image_num_loaded(void) {
     size_t i;
-    for(i = 0; images[i]; i++);
+    for(i = 0; ainur.images[i]; i++);
     return i;
 }
 
 
 
 /**
- * @brief A wrapper function to sort the elements in the static struct image **images in image.c.
+ * @brief A wrapper function to sort the elements in the ainur.(struct image **images).
  */
 void image_qsort(void) {
-    qsort( images, image_num_loaded(), sizeof(struct image *), image_compare );
+    if(!ainur.images) { return; }
+    qsort( ainur.images, image_num_loaded(), sizeof(struct image *), image_compare );
     return;
 }

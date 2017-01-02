@@ -13,15 +13,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "ainur.h"
 #include "debug.h"
 #include "lkernel.h"
-#include "ainur.h"
 
 
-/**
- * External variables.
- */
-struct engine ainur;
 
 /**
  * @brief Creates and initializes the 'lkernel' Lua state.

@@ -6,7 +6,7 @@
 
 #include "draw.h"
 
-static unsigned int frameLimit = SDL_GetTicks() + 16; //initial fps ~= 60fps
+static unsigned int frameLimit = /*SDL_GetTicks() +*/ 16; //initial fps ~= 60fps
 
 /**
  * @brief 

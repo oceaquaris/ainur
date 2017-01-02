@@ -225,4 +225,5 @@ int debug_fputc(int character)
 
     return output;
 }
-#endif /*DEBUGGING*/
+#endif //DEBUGGING
+*/

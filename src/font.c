@@ -20,8 +20,6 @@
 #include "file.h"
 
 
-//external struct
-struct engine ainur;
 
 //static functions
 static SDL_Color *hexcodetorgba(const char *rgbaCode);

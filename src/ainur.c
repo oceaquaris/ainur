@@ -26,6 +26,9 @@
 #include "lkernel.h"
 #include "screen.h"
 
+/* initialize the ainur engine struct */
+struct engine ainur = { NULL, NULL, NULL, NULL, NULL };
+
 static void ainur_cleanEngine();
 
 /**
@@ -80,6 +83,7 @@ static void ainur_cleanEngine()
     //functions are order dependent (reverse of loading)
     screen_freeMain();
     font_freeMain();
+    image_close();
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();

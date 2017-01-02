@@ -5,6 +5,8 @@
 
 #include "image.h"
 
+#define TILE_SUCCESS 1
+#define TILE_FAILURE 0
 
 /**
  * @struct tile
@@ -21,18 +23,14 @@ struct tile {
  * Function declarations.
  */
 extern struct tile ** tile_bsearch          (const char *tag);
+extern void           tile_close            (void);
 extern struct tile *  tile_create           (const char *image_tag, int x, int y, int width, int height, const char *tag);
 extern struct tile *  tile_create_fromImage (struct image *src, int x, int y, int width, int height, const char *tag);
 extern void           tile_free             (struct tile *tile);
-extern size_t         tile_num_registered   (void);
+extern void           tile_freeAll          (void);
+extern int            tile_init             (void);
+extern size_t         tile_numRegistered    (void);
 extern void           tile_qsort            (void);
 
-extern struct tile **tile_extractFromSurface( SDL_Surface *src, int std_h, int std_w );
-extern struct tile **tile_extractFromImage(const char *filename, int std_h, int std_w );
-
-//free'ing functions
-extern void tile_free(struct tile *tile);
-extern void tile_free_array(struct tile **tiles);
-extern void tile_free_arrayRecursive(struct tile **tiles);
 
 #endif /*TILE_H*/

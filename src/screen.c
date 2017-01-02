@@ -21,7 +21,6 @@
 #include "ainurio.h"
 #include "debug.h"
 
-struct engine ainur;
 
 
 /**
