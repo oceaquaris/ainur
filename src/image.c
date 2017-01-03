@@ -12,10 +12,10 @@
  *      image_free
  *      image_freeAll
  *      image_freeTag
- *      image_initIMG
+ *      image_init
  *      image_load
  *      image_loadSDL_Surface
- *      image_num_loaded
+ *      image_numLoaded
  *      image_qsort
  */
 
@@ -68,7 +68,7 @@ struct image **image_bsearch(const char *tag) {
 
     return (struct image **)bsearch( tag,
                                      ainur.images,
-                                     image_num_loaded(),
+                                     image_numLoaded(),
                                      sizeof(struct image *),
                                      image_compare );
 }
@@ -79,7 +79,9 @@ struct image **image_bsearch(const char *tag) {
  * @brief Wrapper function to perform cleanup protocols for image functionalities.
  */
 void image_close(void) {
+    //order dependent
     image_freeAll();
+    IMG_Quit();
     return;
 }
 
@@ -115,7 +117,7 @@ void image_freeAll(void) {
     if(!ainur.images) { return; } //test to see if 'images' is valid
 
     size_t len;
-    for(len = image_num_loaded(); len > 0; len--) {
+    for(len = image_numLoaded(); len > 0; len--) {
         image_free(ainur.images[len-1]);
     }
 
@@ -137,7 +139,7 @@ void image_freeTag(const char *tag) {
         return;
     }
 
-    size_t length = image_num_loaded();     //find the number of elements in 'images'
+    size_t length = image_numLoaded();     //find the number of elements in 'images'
 
     image_free(image[0]);   //free the image that we found.
 
@@ -166,14 +168,15 @@ void image_freeTag(const char *tag) {
  * @return IMAGE_SUCCESS: program success
  *         exit()s program on failure.
  */
-int image_initIMG(void) {
+int image_init(void) {
+    //order dependent
     int flags  = IMG_INIT_PNG;
     int loaded = IMG_Init(IMG_INIT_PNG); //0x00000002
 
     if( (loaded&flags) != flags) { //if IMG_Init() fails
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_initIMG: IMG_Init error: Failed to initialize required png support.\n"\
-                    "image_initIMG: IMG_Init error: %s\n", IMG_GetError());
+        debug_print("image_init: IMG_Init error: Failed to initialize required png support.\n"\
+                    "image_init: IMG_Init error: %s\n", IMG_GetError());
         #endif /*defined DEBUGGING || defined VERBOSE*/
 
         exit(EXIT_FAILURE); //close program and free everything.
@@ -182,7 +185,7 @@ int image_initIMG(void) {
     //attempt to allocate memory for the 'images' array
     if( !(ainur.images = malloc(sizeof(struct image *))) ) {
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_initIMG: IMG_Init error: Unable to allocate memory for struct tile **tiles.\n");
+        debug_print("image_init: IMG_Init error: Unable to allocate memory for struct tile **tiles.\n");
         #endif /*defined DEBUGGING || defined VERBOSE*/
 
         exit(EXIT_FAILURE); //close program and free everything.
@@ -278,7 +281,7 @@ struct image *image_load(const char *filename, const char *tag) {
     memcpy( load->filename, tag, sizeof(char) * (length + 1) );
 
     //third, attempt to extend the length of the statically allocated struct image **images
-    int numloads = image_num_loaded();
+    int numloads = image_numLoaded();
     if ( !( ainur.images = realloc(ainur.images, (numloads + 2) * (sizeof(struct image *) ) ) ) ) {
         #if defined(DEBUGGING) || defined(VERBOSE)
         debug_print("image_load: Unable to reallocate enough memory to resize ainur.(struct images **images).\n");
@@ -360,7 +363,7 @@ SDL_Surface *image_loadSDL_Surface(const char *filename) {
  * 
  * @return The length of ainur.(struct image **images).
  */
-size_t image_num_loaded(void) {
+size_t image_numLoaded(void) {
     size_t i;
     for(i = 0; ainur.images[i]; i++);
     return i;
@@ -373,6 +376,6 @@ size_t image_num_loaded(void) {
  */
 void image_qsort(void) {
     if(!ainur.images) { return; }
-    qsort( ainur.images, image_num_loaded(), sizeof(struct image *), image_compare );
+    qsort( ainur.images, image_numLoaded(), sizeof(struct image *), image_compare );
     return;
 }

@@ -25,25 +25,38 @@
 static SDL_Color *hexcodetorgba(const char *rgbaCode);
 static unsigned char hex_to_int(char tens_16, char ones_16);
 
+
+
+/**
+ * @brief Close TTF/fonts.
+ */
+void font_close(void) {
+    //order dependent
+    font_freeMain();
+    TTF_Quit();
+    return;
+}
 /**
  * @brief Initializes SDL_ttf library.
  */
-int font_initTTF(void)
-{
+int font_init(void) {
+    //order dependent
     if( TTF_Init() < 0 ) {
         #ifdef DEBUGGING
         if(debug_getDebugStatus()) {
-            debug_fprintf("font_initTTF() => TTF_Init() error: %s", TTF_GetError());
+            debug_fprintf("font_init() => TTF_Init() error: %s", TTF_GetError());
         }
         #endif /*DEBUGGING*/
         #ifdef VERBOSE
         if(debug_getVerboseStatus()) {
-            debug_printf("font_initTTF() => TTF_Init() error: %s", TTF_GetError());
+            debug_printf("font_init() => TTF_Init() error: %s", TTF_GetError());
         }
         #endif /*VERBOSE*/
 
         exit(EXIT_FAILURE); //close the program
     }
+
+    font_initMain();//initialize the default font
 
     return 0;
 }
@@ -108,33 +121,33 @@ TTF_Font *font_load(const char *filename, int ptsize)
  */
 int font_initMain()
 {
-	ainur.font = font_load("VL-Gothic-Regular.ttf", 15);
-	if( !(ainur.font) ) {
-		#ifdef DEBUGGING
-		if(debug_getDebugStatus()) {
-			debug_fprintf("font_initMain() => Unable to load default font.\n");
-		}
-		#endif /*DEBUGGING*/
-		#ifdef VERBOSE
-		if(debug_getVerboseStatus()) {
-			debug_printf("font_initMain() => Unable to load default font.\n");
-		}
-		#endif /*VERBOSE*/
+    ainur.font = font_load("VL-Gothic-Regular.ttf", 15);
+    if( !(ainur.font) ) {
+        #ifdef DEBUGGING
+        if(debug_getDebugStatus()) {
+            debug_fprintf("font_initMain() => Unable to load default font.\n");
+        }
+        #endif /*DEBUGGING*/
+        #ifdef VERBOSE
+        if(debug_getVerboseStatus()) {
+            debug_printf("font_initMain() => Unable to load default font.\n");
+        }
+        #endif /*VERBOSE*/
 
-		exit(EXIT_FAILURE); //exit due to failure
-	}
+        exit(EXIT_FAILURE); //exit due to failure
+    }
 
-	return 0;
+    return 0;
 }
 
 
 void font_freeMain()
 {
-	if( !(ainur.font) ) { //font wasn't initialized.
-		return;
-	}
-	TTF_CloseFont(ainur.font);
-	return;
+    if( !(ainur.font) ) { //font wasn't initialized.
+        return;
+    }
+    TTF_CloseFont(ainur.font);
+    return;
 }
 
 /**

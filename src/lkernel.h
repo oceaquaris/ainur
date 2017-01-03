@@ -22,7 +22,7 @@ char *lkernel_version(void);
 char *lkernel_release(void);
 char *lkernel_copyright(void);
 char *lkernel_authors(void);
-int lkernel_initLua(void);
+int lkernel_init(void);
 void lkernel_close(void);
 
 

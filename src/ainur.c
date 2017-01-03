@@ -29,7 +29,45 @@
 /* initialize the ainur engine struct */
 struct engine ainur = { NULL, NULL, NULL, NULL, NULL };
 
-static void ainur_cleanEngine();
+
+
+/**
+ * @brief Cleanup protocols: should be used to free heap variables
+ *        and quit other tasks (SDL, Lua).
+ */
+static void ainur_close()
+{
+    //functions are order dependent (reverse of loading)
+    screen_freeMain();
+    font_close();
+    tile_close();
+    image_close();
+    screen_close();
+    lkernel_close();
+    return;
+}
+
+
+
+static int ainur_init(void) {
+    lkernel_init();     //initialize Lua
+    screen_init();      //initialize SDL2
+    image_init();       //initialize IMG (SDL2 extension)
+    tile_init();        //initialize tiles
+    font_init();        //initialize TTF (SDL2 extension)
+
+    return 1;
+}
+
+//TODO: static function to load setting from home directory
+
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+
 
 /**
  * @brief The main function. Opens a window. Begins game.
@@ -55,15 +93,13 @@ int main(int argc, char *argv[])
         #endif /*VERBOSE*/
     }
 
-    lkernel_initLua();  //initialize Lua
-    screen_initSDL();   //initialize SDL2
-    image_initIMG();    //initialize IMG (SDL2 extension)
-    font_initTTF();     //initialize TTF (SDL2 extension)
+    //must be registered befor initialization.
+    atexit(ainur_close);  //register cleanup code
 
-    font_initMain();                            //initialize the default font
+    ainur_init();
+
     screen_initMain("Testing...", 400, 400);    //open the main window
 
-    atexit(ainur_cleanEngine);  //register cleanup code
 
     while(1) {
         //ainurio_SDLreceive();   //receive key input
@@ -74,21 +110,3 @@ int main(int argc, char *argv[])
     exit(EXIT_SUCCESS); //call cleanup code
 }
 
-/**
- * @brief Cleanup protocols: should be used to free heap variables
- *        and quit other tasks (SDL, Lua).
- */
-static void ainur_cleanEngine()
-{
-    //functions are order dependent (reverse of loading)
-    screen_freeMain();
-    font_freeMain();
-    image_close();
-    TTF_Quit();
-    IMG_Quit();
-    SDL_Quit();
-    lkernel_close();
-    return;
-}
-
-//TODO: static function to load setting from home directory

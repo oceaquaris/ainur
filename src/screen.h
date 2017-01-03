@@ -12,7 +12,8 @@
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_surface.h>
 
-int screen_initSDL();
+void screen_close(void);
+int screen_init(void);
 int screen_initMain(const char *title, int width, int height);
 void screen_freeMain();
 

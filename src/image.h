@@ -35,10 +35,10 @@ extern void            image_close           (void);
 extern void            image_free            (struct image *image);
 extern void            image_freeAll         (void);
 extern void            image_freeTag         (const char *tag);
-extern int             image_initIMG         (void);
+extern int             image_init            (void);
 extern struct image *  image_load            (const char *filename, const char *tag);
 extern SDL_Surface *   image_loadSDL_Surface (const char *filename);
-extern size_t          image_num_loaded      (void);
+extern size_t          image_numLoaded       (void);
 extern void            image_qsort           (void);
 
 #endif /* IMAGE_H_ */

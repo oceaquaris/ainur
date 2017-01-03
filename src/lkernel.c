@@ -25,7 +25,7 @@
  * @return LUA_SUCCESS: successful execution
  *         exit()s on program failure, for safety reasons
  */
-int lkernel_initLua(void)
+int lkernel_init(void)
 {
     ainur.lkernel = luaL_newstate();
     if( !(ainur.lkernel) ) {

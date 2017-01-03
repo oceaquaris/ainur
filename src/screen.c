@@ -24,26 +24,26 @@
 
 
 /**
+ * @brief Perform cleanup protocols for SDL/screens.
+ */
+void screen_close(void) {
+    SDL_Quit();
+    return;
+}
+
+
+
+/**
  * @brief Initializes SDL2
  *
  * @return 0: normal execution
  */
-int screen_initSDL()
+int screen_init(void)
 {
     if( SDL_Init(SDL_INIT_EVERYTHING) < 0 ) { //if SDL_Init() has an error (not equal to 0)
         #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
+        debug_print("screen_init() => SDL_Init() error: %s\n", SDL_GetError());
         #endif
-//         #ifdef DEBUGGING
-//         if(debug_getDebugStatus()) {
-//             debug_fprintf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
-//         }
-//         #endif /*DEBUGGING*/
-//         #ifdef VERBOSE
-//         if(debug_getVerboseStatus()) {
-//             debug_printf("screen_initSDL() => SDL_Init() error: %s\n", SDL_GetError());
-//         }
-//         #endif /*VERBOSE*/
 
         exit(EXIT_FAILURE); //quit program & execute shutdown protocols
     }

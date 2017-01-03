@@ -12,12 +12,11 @@
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_ttf.h>
 
-int font_initTTF(void);
+void font_close(void);
+int font_init(void);
 TTF_Font *font_load(const char *filename, int ptsize);
 int font_initMain();
 void font_freeMain();
-SDL_Surface *font_draw(const char *text,
-					   TTF_Font *font,
-					   SDL_Color fontColor);
+SDL_Surface *font_draw(const char *text, TTF_Font *font, SDL_Color fontColor);
 
 #endif /* SRC_FONT_H_ */
