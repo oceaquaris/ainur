@@ -1,10 +1,10 @@
 /**
  * @file tile.c
- * 
+ *
  * Field Overview:
  *  static:
- *      struct tile **tiles
- *      tile_compare
+ *      tile_compare_bsearch
+ *      tile_compare_qsort
  *  extern:
  */
 
@@ -20,7 +20,27 @@
 
 
 /**
- * @brief Wrapper function that performs a comparison on the 'tag's of two struct tiles *'s.
+ * @brief Wrapper function that performs a comparison between a key and
+ *        the 'tag' of a tile struct.
+ *
+ * @param pkey
+ *        A pointer to a (char *) key to be compared.
+ * @param pelem
+ *        A pointer to a (struct tile *) to be compared.
+ *
+ * @return < 0: pkey has a lower 'tag' string value than pelem.
+ *         = 0: pkey and pelem have the same 'tag' label.
+ *         > 0: pkey has a higher 'tag' string value than pelem.
+ */
+static int tile_compare_bsearch(const void *pkey, const void *pelem) {
+    return strcmp( ((char *)pkey), ((struct tile **)pelem)[0]->tag );
+}
+
+
+
+/**
+ * @brief Wrapper function that performs a comparison on the 'tag's of two
+ *        struct tiles *'s.
  *
  * @param p1
  *        A pointer to a (struct tile *) to be compared.
@@ -31,7 +51,7 @@
  *         = 0: p1 and p2 have the same 'tag' label.
  *         > 0: p1 has a higher 'tag' string value than p2.
  */
-static int tile_compare(const void *p1, const void *p2) {
+static int tile_compare_qsort(const void *p1, const void *p2) {
     return strcmp( ((struct tile **)p1)[0]->tag, ((struct tile **)p2)[0]->tag );
 }
 
@@ -46,16 +66,20 @@ static int tile_compare(const void *p1, const void *p2) {
 /**
  * @brief A wrapper function to perform a binary search on 'tiles' in the ainur engine.
  *        Retrieve an element, if one exists, that has the 'tag', 'tag' within it.
+ *
  * @param tag
  *        The 'tag' of the (struct tile *) to search for.
+ *
  * @return A pointer to the array position with the correct 'tag', or NULL (no match).
  */
 struct tile **tile_bsearch(const char *tag) {
+    if(!tag) { return NULL; }
+
     return (struct tile **)bsearch( tag,
                                     ainur.tiles,
                                     tile_numRegistered(),
                                     sizeof(struct tile *),
-                                    tile_compare );
+                                    tile_compare_bsearch );
 }
 
 
@@ -76,10 +100,8 @@ void tile_close(void) {
 struct tile *tile_create(const char *image_tag, int x, int y, int width, int height, const char *tag) {
     struct image **image = image_bsearch(image_tag);
     if(!image) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_create: Unable to create tile: %s\n"\
-                    "             Image not found.\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_create: Unable to create tile: %s\n"\
+                 "             Image not found.\n", tag);
 
         return NULL;
     }
@@ -111,18 +133,14 @@ struct tile *tile_create(const char *image_tag, int x, int y, int width, int hei
 struct tile *tile_create_fromImage( struct image *src, int x, int y, int width, int height, const char *tag ) {
     //'tag' cannot be NULL!!!
     if(!tag) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_create_fromImage: Unable to create tile: formal param 'tag' is NULL.\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_create_fromImage: Unable to create tile: formal param 'tag' is NULL.\n");
 
         return NULL;
     }
 
     //'tag' must be unique!!!
     if( tile_bsearch(tag) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_create_fromImage: Unable to create tile: 'tag' %s is not unique.\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_create_fromImage: Unable to create tile: 'tag' %s is not unique.\n", tag);
 
         return NULL;
     }
@@ -131,9 +149,7 @@ struct tile *tile_create_fromImage( struct image *src, int x, int y, int width, 
 
     //allocate mem for tile; check if allocation was successful
     if( !(output = (struct tile *)malloc(sizeof(struct tile))) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_create_fromImage: Unable to allocate memory for new (struct image *): %s\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_create_fromImage: Unable to allocate memory for new (struct image *): %s\n", tag);
 
         return NULL;
     }
@@ -149,9 +165,7 @@ struct tile *tile_create_fromImage( struct image *src, int x, int y, int width, 
     //attempt to allocate memory for 'tag' string
     size_t length = strlen(tag);
     if( !(output->tag = malloc( sizeof(char) * (length + 1) )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_create_fromImage: Unable to allocate memory for new (struct tile *): %s\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_create_fromImage: Unable to allocate memory for new (struct tile *): %s\n", tag);
 
         tile_free(output);
         return NULL;
@@ -162,9 +176,7 @@ struct tile *tile_create_fromImage( struct image *src, int x, int y, int width, 
     //attempt to allocate more memory for the tile array
     length = tile_numRegistered();
     if( !(ainur.tiles = realloc(ainur.tiles, sizeof(struct tile *) * (length + 2))) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_create_fromImage: Unable to allocate more memory for ainur.(struct tile **tiles).\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_create_fromImage: Unable to allocate more memory for ainur.(struct tile **tiles).\n");
 
         tile_free(output);
         return NULL;
@@ -217,6 +229,9 @@ void tile_freeAll(void) {
 
 /**
  * @brief Allocate memory for ainur.tiles; attach NULL terminator.
+ *
+ * @return TILE_SUCCESS if initalization was successful;
+ *         TILE_FAILURE if initalization did not succeed.
  */
 int tile_init(void) {
     if(ainur.tiles) {
@@ -224,9 +239,7 @@ int tile_init(void) {
     }
 
     if( !(ainur.tiles = malloc(sizeof(struct tile *))) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("tile_init: Unable to allocate memory for ainur.(struct tile **tiles).\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("tile_init: Unable to allocate memory for ainur.(struct tile **tiles).\n");
 
         return TILE_FAILURE;
     }
@@ -257,6 +270,6 @@ void tile_qsort(void) {
     qsort( ainur.tiles,
            tile_numRegistered(),
            sizeof(struct tile *),
-           tile_compare );
+           tile_compare_qsort );
     return;
 }

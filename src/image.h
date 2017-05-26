@@ -8,6 +8,8 @@
 #ifndef IMAGE_H_
 #define IMAGE_H_
 
+#include <stdio.h>
+
 #define IMAGE_SUCCESS   1
 #define IMAGE_FAILURE   0
 
@@ -32,6 +34,8 @@ struct image {
  */
 extern struct image ** image_bsearch         (const char *tag);
 extern void            image_close           (void);
+extern int             image_dump            (FILE *stream, struct image *image);
+extern int             image_dumpAll         (FILE *stream);
 extern void            image_free            (struct image *image);
 extern void            image_freeAll         (void);
 extern void            image_freeTag         (const char *tag);

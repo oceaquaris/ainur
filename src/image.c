@@ -1,14 +1,19 @@
 /*
  * image.c
  *
- *  Created on: Apr 21, 2015
- *      Author: oceaquaris
+ *     Created on: 21 April 2015
+ *         Author: oceaquaris
+ *  Last Modified: 26 May 2017
  *
  * Field Overview:
  *  static:
- *      image_compare
+ *      image_compare_bsearch
+ *      image_compare_qsort
  *  extern:
  *      image_bsearch
+ *      image_close
+ *      image_dump
+ *      image_dumpAll
  *      image_free
  *      image_freeAll
  *      image_freeTag
@@ -33,19 +38,39 @@
 
 
 /**
- * @brief Wrapper function that performs a comparison on the strings two struct image *'s.
+ * @brief Wrapper function that performs a comparison on a key and the tag
+ *        of a struct image *.
+ *
+ * @param pkey
+ *        A pointer to a (char *) to be compared (the key).
+ * @param pelem
+ *        A pointer to a (struct image *) to be compared (the element).
+ *
+ * @return < 0: pkey has a lower 'tag' string value than pelem.
+ *         = 0: pkey and pelem have the same 'tag' label.
+ *         > 0: pkey has a higher 'tag' string value than pelem.
+ */
+static int image_compare_bsearch(const void *pkey, const void *pelem) {
+    return strcmp( ((char *)pkey), ((struct image **)pelem)[0]->tag );
+}
+
+
+
+/**
+ * @brief Wrapper function that performs a comparison on the 'tag' strings
+ *        in two struct image *'s.
  *
  * @param p1
- *        A pointer to a (struct image *) to be compared.
+ *        A pointer to a (char *) to be compared (the key).
  * @param p2
- *        A pointer to a (struct image *) to be compared.
+ *        A pointer to a (struct image *) to be compared (the element).
  *
  * @return < 0: p1 has a lower 'tag' string value than p2.
  *         = 0: p1 and p2 have the same 'tag' label.
  *         > 0: p1 has a higher 'tag' string value than p2.
  */
-static int image_compare(const void *p1, const void *p2) {
-    return strcmp( ((struct image **)p1)[0]->tag, ((struct image **)p2)[0]->tag );
+static int image_compare_qsort(const void *p1, const void *p2) {
+    return strcmp( (*((struct image **)p1))->tag, (*((struct image **)p2))->tag );
 }
 
 
@@ -70,19 +95,75 @@ struct image **image_bsearch(const char *tag) {
                                      ainur.images,
                                      image_numLoaded(),
                                      sizeof(struct image *),
-                                     image_compare );
+                                     image_compare_bsearch );
 }
 
 
 
 /**
- * @brief Wrapper function to perform cleanup protocols for image functionalities.
+ * @brief Wrapper function to perform cleanup protocols for image
+ *        functionalities.
+ * @note Function calls in this wrapper function are order dependent.
  */
 void image_close(void) {
-    //order dependent
-    image_freeAll();
+    image_freeAll();    //function calls are order dependent
     IMG_Quit();
     return;
+}
+
+
+
+/**
+ * @brief Dump information about an image to a file.
+ *
+ * @param stream
+ *        The FILE to dump the text to.
+ * @param image
+ *        The struct image* to examine.
+ */
+int image_dump(FILE *stream, struct image *image) {
+    return fprintf(stream,
+                   "struct image *: %p\n"\
+                   "    tag = %s\n"\
+                   "    surface = %p\n"\
+                   "    filename = %s\n",
+                   image,
+                   image->tag,
+                   image->surface,
+                   image->filename);
+}
+
+
+
+/**
+ * @brief Dump information about all loaded images to a file.
+ *
+ * @param stream
+ *        The FILE to dump the text to.
+ *
+ * @return The total number of characters written (similar to fprintf).
+ */
+int image_dumpAll(FILE *stream) {
+    register int sum = 0, i;
+    size_t len = image_numLoaded();
+
+    sum += fprintf(stream, "struct image **: %p\n"\
+                           "  length = %lu\n"\
+                           "  contents = {\n", ainur.images, len);
+    for(i = 0; i < len; i++) {
+        sum += fprintf(stream,
+                       "    struct image *: %p\n"\
+                       "        tag = \"%s\"\n"\
+                       "        surface = %p\n"\
+                       "        filename = \"%s\"\n",
+                       ainur.images[i],
+                       ainur.images[i]->tag,
+                       ainur.images[i]->surface,
+                       ainur.images[i]->filename);
+    }
+    sum += fprintf(stream, "    %p\n}\n", NULL);
+
+    return sum;
 }
 
 
@@ -93,7 +174,7 @@ void image_close(void) {
  * @param image
  *        Pointer to image struct to free.
  */
-void image_free(struct image *image) { //FIXME: may want to make this static & eliminate 'images' checking
+void image_free(struct image *image) {
     if( !image ) { return; }    //check to see if our image is valid
 
     //free elements if available
@@ -134,9 +215,10 @@ void image_freeAll(void) {
  */
 void image_freeTag(const char *tag) {
     struct image **image;
-    image = image_bsearch(tag); //find the image
-    if(!image) {
-        return;
+
+    //if tag is null or tag image is not found
+    if(!tag || !(image = image_bsearch(tag)) ) {
+        return;//do nothing
     }
 
     size_t length = image_numLoaded();     //find the number of elements in 'images'
@@ -147,10 +229,9 @@ void image_freeTag(const char *tag) {
     ainur.images[length - 1] = NULL;      //make the last reference in 'images' NULL
 
     //attempt to resize the 'images' array
-    if( !( ainur.images = realloc(ainur.images, length * (sizeof(struct image *) ) ) ) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_freeTag: Unable to reallocate enough memory to resize static struct images **images.\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+    if( !( ainur.images = realloc(ainur.images, length * (sizeof(struct image *)) ) ) ) {
+        dbgprint("image_freeTag:\n"\
+                 "    Unable to reallocate enough memory to resize static struct images **images.\n");
 
         image_freeAll(); //free up memory
         return;
@@ -174,19 +255,15 @@ int image_init(void) {
     int loaded = IMG_Init(IMG_INIT_PNG); //0x00000002
 
     if( (loaded&flags) != flags) { //if IMG_Init() fails
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_init: IMG_Init error: Failed to initialize required png support.\n"\
-                    "image_init: IMG_Init error: %s\n", IMG_GetError());
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_init: IMG_Init error: Failed to initialize required png support.\n"\
+                 "            IMG_Init error: %s\n", IMG_GetError());
 
         exit(EXIT_FAILURE); //close program and free everything.
     }
 
     //attempt to allocate memory for the 'images' array
     if( !(ainur.images = malloc(sizeof(struct image *))) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_init: IMG_Init error: Unable to allocate memory for struct tile **tiles.\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_init: IMG_Init error: Unable to allocate memory for struct tile **tiles.\n");
 
         exit(EXIT_FAILURE); //close program and free everything.
     }
@@ -210,22 +287,29 @@ int image_init(void) {
  * @return A pointer to the newly created image struct.
  */
 struct image *image_load(const char *filename, const char *tag) {
-    //'tag' cannot be NULL!!!
-    if(!tag) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to load image: %s.\n"\
-                    "            formal param 'tag' is NULL.\n", filename);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+    //'filename' and 'tag' cannot be NULL!!!
+    if(!filename || !tag) {
+        dbgprint("image_load: Unable to load image: %s.\n"\
+                 "            formal params 'filename' and 'tag' must be non-NULL\n"\
+                 "            filename = \"%s\"\n"\
+                 "            tag = \"%s\"\n", filename, filename, tag);
 
         return NULL;
     }
 
-    //'tag' must be unique!!!
+    //check to see if the file exists
+    if(!file_exists(filename)) {
+        dbgprint("image_load: Unable to load image: %s.\n"\
+                 "            %s\n", filename, ERROR_NO_FILE);
+
+        return NULL;
+    }
+
+    //'tag' must be unique!
     if( image_bsearch(tag) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to load image: %s.\n"\
-                    "            formal param 'tag' is not unique.\n", filename);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_load: Unable to load image: %s.\n"\
+                 "            Associated tag, \"%s\", is not unique.\n",
+                 filename, tag);
 
         return NULL;
     }
@@ -233,9 +317,7 @@ struct image *image_load(const char *filename, const char *tag) {
     //first, attempt to load an SDL_Surface.
     SDL_Surface *surface = image_loadSDL_Surface(filename);
     if(!surface) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to load image: %s.\n", filename);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_load: Unable to load image: %s.\n", filename);
 
         return NULL;
     }
@@ -245,47 +327,46 @@ struct image *image_load(const char *filename, const char *tag) {
 
     //attempt to allocate memory for the struct image
     if( !(load = malloc( sizeof(struct image) ))  ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to allocate enough memory for new struct image: %s.\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_load: Unable to allocate enough memory for new struct image: %s.\n", tag);
 
         return load; //aka NULL
     }
 
-    size_t length = strlen(tag);    //'length' will store the lengths of 'tag' and 'filename'
+    //set the surface inside the image struct
+    load->surface = surface;
+
+    //'length' will store the lengths of 'tag' and 'filename'
+    size_t length = strlen(tag);
 
     //attempt to allocate memory for the (char *) field 'tag' in the struct image
     if ( !(load->tag = malloc( sizeof(char) * (length + 1) )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to allocate enough memory for (%s)->tag.\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_load: Unable to allocate enough memory for (%s)->tag.\n", tag);
 
         image_free(load);   //free up memory
         return NULL;
     }
+
     //copy 'tag' to load->tag
     memcpy( load->tag, tag, sizeof(char) * (length + 1) );
 
-    length = strlen(filename);  //reassign the length to that of 'filename'
+    //reassign the length to that of 'filename'
+    length = strlen(filename);
 
     //attempt to allocate memory for the (char *) field 'filename' in the struct image
     if( !(load->filename = malloc( sizeof(char) * (length + 1) )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to allocate enough memory for (%s)->filename.\n", tag);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_load: Unable to allocate enough memory for (%s)->filename.\n", tag);
 
         image_free(load);   //free up memory
         return NULL;
     }
+
     //copy 'filename' to load->filename
-    memcpy( load->filename, tag, sizeof(char) * (length + 1) );
+    memcpy( load->filename, filename, sizeof(char) * (length + 1) );
 
     //third, attempt to extend the length of the statically allocated struct image **images
     int numloads = image_numLoaded();
     if ( !( ainur.images = realloc(ainur.images, (numloads + 2) * (sizeof(struct image *) ) ) ) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_load: Unable to reallocate enough memory to resize ainur.(struct images **images).\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_load: Unable to reallocate enough memory to resize ainur.(struct images **images).\n");
 
         free(load); //free up memory
         return NULL;
@@ -315,9 +396,7 @@ struct image *image_load(const char *filename, const char *tag) {
  */
 SDL_Surface *image_loadSDL_Surface(const char *filename) {
     if( !file_exists(filename) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_loadSDL_Surface: formal param 'filename'(%s): %s\n", filename, ERROR_NO_FILE);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_loadSDL_Surface: formal param 'filename'(%s): %s\n", filename, ERROR_NO_FILE);
 
         return NULL;
     }
@@ -325,28 +404,26 @@ SDL_Surface *image_loadSDL_Surface(const char *filename) {
     SDL_Surface *temp = IMG_Load(filename);     //Load an SDL_Surface using the filename given.
 
     if(!temp) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_loadSDL_Surface: IMG_Load error: %s\n", IMG_GetError());
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_loadSDL_Surface: IMG_Load error: %s\n", IMG_GetError());
 
         return temp;    //aka NULL
     }
 
-    SDL_Surface *output;    //Declare an SDL_Surface (for output by function)
+    SDL_Surface *output = NULL;    //Declare an SDL_Surface (for output by function)
 
-    SDL_SetColorKey(temp,
-                    SDL_TRUE, 
-                    SDL_MapRGB(temp->format, 0, 0, 0)   ); /* Make the background transparent */
+    /*SDL_SetColorKey(temp,
+                    SDL_TRUE,
+                    SDL_MapRGB(temp->format, 0, 0, 0)   ); // Make the background transparent */
 
-    output = SDL_ConvertSurfaceFormat(temp,
+    /*output = SDL_ConvertSurfaceFormat(temp,
                                       SDL_PIXELTYPE_UNKNOWN,
-                                      0 ); /* Convert the image to the screen's native format */
+                                      0 ); *//* Convert the image to the screen's native format */
+
+    output = SDL_ConvertSurface(temp, SDL_GetWindowSurface(ainur.screen)->format, 0);
 
     if(!output) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("image_loadSDL_Surface: local var 'output': %s\n"\
-                    "            SDL error: %s\n", ERROR_NULL_SDL_SURFACE, SDL_GetError() );
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("image_loadSDL_Surface: local var 'output': %s\n"\
+                 "            SDL error: %s\n", ERROR_NULL_SDL_SURFACE, SDL_GetError() );
 
         return output;  //aka NULL
     }
@@ -360,7 +437,7 @@ SDL_Surface *image_loadSDL_Surface(const char *filename) {
 
 /**
  * @brief Determines the number of images currently loaded in the engine.
- * 
+ *
  * @return The length of ainur.(struct image **images).
  */
 size_t image_numLoaded(void) {
@@ -376,6 +453,6 @@ size_t image_numLoaded(void) {
  */
 void image_qsort(void) {
     if(!ainur.images) { return; }
-    qsort( ainur.images, image_numLoaded(), sizeof(struct image *), image_compare );
+    qsort( ainur.images, image_numLoaded(), sizeof(struct image *), image_compare_qsort );
     return;
 }

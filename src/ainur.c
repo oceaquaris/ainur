@@ -9,8 +9,6 @@
 
 
 //External libraries...
-#include "ainur.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,12 +17,25 @@
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_ttf.h>
 
+//All our libraries...
+#include "ainur.h"
 #include "ainurio.h"
+#include "color.h"
+#include "datatypes.h"
 #include "debug.h"
+#include "draw.h"
+#include "file.h"
 #include "font.h"
 #include "image.h"
 #include "lkernel.h"
+#include "map.h"
+#include "mem.h"
+#include "palette.h"
+#include "randgen.h"
 #include "screen.h"
+#include "species.h"
+#include "sprite.h"
+#include "tile.h"
 
 /* initialize the ainur engine struct */
 struct engine ainur = { NULL, NULL, NULL, NULL, NULL };
@@ -35,7 +46,7 @@ struct engine ainur = { NULL, NULL, NULL, NULL, NULL };
  * @brief Cleanup protocols: should be used to free heap variables
  *        and quit other tasks (SDL, Lua).
  */
-static void ainur_close()
+static inline void ainur_close(void)
 {
     //functions are order dependent (reverse of loading)
     screen_freeMain();
@@ -49,14 +60,19 @@ static void ainur_close()
 
 
 
-static int ainur_init(void) {
+/**
+ * @brief Initialization protocols.
+ */
+static inline void ainur_init(void) {
     lkernel_init();     //initialize Lua
     screen_init();      //initialize SDL2
     image_init();       //initialize IMG (SDL2 extension)
     tile_init();        //initialize tiles
     font_init();        //initialize TTF (SDL2 extension)
 
-    return 1;
+    screen_initMain("Testing...", 400, 400);    //open the main window
+
+    return;
 }
 
 //TODO: static function to load setting from home directory
@@ -98,13 +114,24 @@ int main(int argc, char *argv[])
 
     ainur_init();
 
-    screen_initMain("Testing...", 400, 400);    //open the main window
+    image_load("brick.png", "i_brick");
+    image_load("brick.png", "i_brick2");
+    image_load("brick.poop", "i_poop");
+    image_load("brick.png", "i_the");
+    image_load("brick.png", "telk");
+    image_load("brick.png", "bewn");
+    image_load("brick.png", "nror");
+    image_load("brick.png", "obne");
 
+    image_dumpAll(stdout);
+
+    struct image **img = image_bsearch("i_brick");
+    image_dump(stdout, img[0]);
 
     while(1) {
         //ainurio_SDLreceive();   //receive key input
         ainurio_interpretInput(); //interpret keystroke
-        SDL_Delay(16);          //delay/pause to save CPU
+        SDL_Delay(16);            //delay/pause to save CPU
     }
 
     exit(EXIT_SUCCESS); //call cleanup code

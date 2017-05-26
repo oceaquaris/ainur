@@ -70,7 +70,7 @@ void debug_debugOff(void) {
     if(debug_logbook) {
         fclose(debug_logbook);
     }
-    
+
     return;
 }
 
@@ -106,7 +106,7 @@ int debug_getVerboseStatus(void) {
 #if defined(DEBUGGING) || defined(VERBOSE)
 int debug_print(const char *format, ...) {
     int output = 0;
-    
+
     va_list args;
     va_start(args, format);
 #ifdef DEBUGGING
@@ -114,7 +114,7 @@ int debug_print(const char *format, ...) {
         output += debug_vfprintf(format, args);
     }
 #endif /*DEBUGGING*/
-    
+
 #ifdef VERBOSE
     if(verbose) {
         output += debug_vprintf(format, args);

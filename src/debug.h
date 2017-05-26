@@ -57,5 +57,14 @@ void debug_verboseOff(void);
 int debug_getVerboseStatus(void);
 #endif
 
+/**
+ * Macros
+ */
+#if defined(DEBUGGING) || defined(VERBOSE)
+#define dbgprint(format, ...) debug_print(format, ##__VA_ARGS__)
+#else
+#define dbgprint(format, ...)
+#endif
+
 
 #endif /* DEBUG_H_ */
