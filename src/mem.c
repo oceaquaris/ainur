@@ -23,16 +23,7 @@
 void mem_free(unsigned int argc, ...)
 {
     if(!argc) { //if argc == 0
-        #ifdef DEBUGGING
-        if(debug_getDebugStatus()) {
-            debug_fprintf("mem_free() => formal param \'argc\': Value less than 1\n");
-        }
-        #endif /* DEBUGGING */
-        #ifdef VERBOSE
-        if(debug_getVerboseStatus()) {
-            debug_printf("mem_free() => formal param \'argc\': Value less than 1\n");
-        }
-        #endif /*VERBOSE*/
+        dbgprintf("mem_free() => formal param \'argc\': Value less than 1\n");
 
         return;
     }

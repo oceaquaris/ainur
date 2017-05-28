@@ -383,6 +383,69 @@ struct image *image_load(const char *filename, const char *tag) {
 
 
 /**
+ * @brief Loads multiple images with their tags.
+ *
+ * @param argc
+ *        Argument count, must be divisible by 2 or function will terminate.
+ * @param ...
+ *        Variable args list. Input pair format is filename, tag, ...
+ */
+int image_loadMultiple(unsigned int argc, ...) {
+    if(!(argc % 2)) { //if argc is not divisible by zero
+        dbgprint("image_loadMultiple: formal param 'argc' is not divisible by 2.\n"\
+                 "    'argc' must be divisible by 2.\n"\
+                 "    argc = %u\n"
+                 "    Returning 0.\n", argc);
+
+        return 0;
+    }
+
+    va_list args;
+    va_start(args, argc);
+
+    int i, pairs = argc / 2;
+    char *filename, *tag;
+    for(i = 0; i < pairs; i++) {
+        filename = va_arg(args, char *);
+        tag = va_arg(args, char *);
+
+        /*
+        if(!filename || !tag) {
+            dbgprint("image_loadMultiple: An image pair contains a NULL\n"\
+                     "    filename = %s\n"\
+                     "    tag = %s\n"\
+                     "    Skipping pair.", filename, tag);
+
+            continue;
+        }
+
+        if(!file_exists(filename)) {
+            dbgprint("image_loadMultiple: %s: %s\n"\
+                     "    Skipping pair: \"%s\", \"%s\"\n",
+                     filename, ERROR_NO_FILE,
+                     filename, tag);
+
+            continue;
+        }
+
+        if(image_bsearch(tag)) {
+            dbgprint("image_loadMultiple: 'tag' \"%s\" is not unique.\n"\
+                     "    Skipping pair: \"%s\", \"%s\"\n",
+                     tag, filename, tag);
+
+            continue
+        }
+        */
+        image_load(filename, tag);
+    }
+    va_end(args)
+
+    return pairs;
+}
+
+
+
+/**
  * @brief Loads an image and converts it to a usable SDL_Surface.
  * @note Error checking:
  *          filename is valid
