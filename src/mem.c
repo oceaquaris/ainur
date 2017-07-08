@@ -23,7 +23,7 @@
 void mem_free(unsigned int argc, ...)
 {
     if(!argc) { //if argc == 0
-        dbgprintf("mem_free() => formal param \'argc\': Value less than 1\n");
+        dbgprint("mem_free() => formal param \'argc\': Value less than 1\n");
 
         return;
     }

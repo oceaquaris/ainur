@@ -438,7 +438,7 @@ int image_loadMultiple(unsigned int argc, ...) {
         */
         image_load(filename, tag);
     }
-    va_end(args)
+    va_end(args);
 
     return pairs;
 }

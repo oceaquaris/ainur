@@ -18,6 +18,25 @@
 
 
 /**
+ * @struct arguments
+ *         Stores command line argument settings.
+ * @var debug
+ *      Whether we are debugging.
+ * @var verbose
+ *      Whether we want verbose.
+ */
+struct arguments {
+#ifdef DEBUGGING
+    int debug;
+#endif
+#ifdef VERBOSE
+    int verbose;
+#endif
+};
+
+
+
+/**
  * @struct engine
  *         Stores important data needed by the game.
  * @var screen
@@ -41,8 +60,6 @@ struct engine {
     lua_State *lkernel;         //Lua kernel state
     struct image **images;
     struct tile **tiles;
-
-
 /*#ifdef VERBOSE
     SDL_Surface *verbose; //for possible use in engine
 #endif VEROBSE*/
