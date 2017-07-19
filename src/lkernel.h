@@ -12,8 +12,15 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "debug.h"
+
 #define LUA_SUCCESS 1
 #define LUA_FAILURE 0
+
+#define LKERNEL_INVALID_PARAMETER(L) { \
+    dbgprint("Invalid parameter for %s.", __func__); \
+    luaL_error( L, "Invalid parameter for %s.", __func__ ); \
+}
 
 /**
  * Function declarations.

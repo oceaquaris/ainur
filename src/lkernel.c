@@ -16,6 +16,8 @@
 #include "ainur.h"
 #include "debug.h"
 #include "lkernel.h"
+#include "lkernel_dice.h"
+#include "lkernel_image.h"
 
 
 
@@ -25,31 +27,36 @@
  * @return LUA_SUCCESS: successful execution
  *         exit()s on program failure, for safety reasons
  */
-int lkernel_init(void)
-{
+int lkernel_init(void) {
     ainur.lkernel = luaL_newstate();
     if( !(ainur.lkernel) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("lkernel_init() => ainur.lkernel unable to initialize\n");
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("lkernel_init() => ainur.lkernel unable to initialize\n");
 
-        //TODO: error message print on terminal (non-debug)
-        
         exit(EXIT_FAILURE); //exit program; execute close protocols, etc.
     }
+
     luaL_openlibs(ainur.lkernel);   //open lua libraries
+
+    //initialize our functions
+    lkernel_dice_init(ainur.lkernel);
+    lkernel_image_init(ainur.lkernel);
+
+    luaL_dostring(ainur.lkernel, "print(dice.roll())");
 
     return LUA_SUCCESS; //successful
 }
 
+
+
 /**
  * @brief Closes the 'lkernel' Lua states
  */
-void lkernel_close(void)
-{
+void lkernel_close(void) {
     lua_close(ainur.lkernel);
     return;
 }
+
+
 
 /**
  * @brief Gives the current version of Lua.
@@ -57,18 +64,15 @@ void lkernel_close(void)
  * @return The version of Lua we are currently using.
  * @note Returned char* needs to be free()ed.
  */
-char *lkernel_version(void)
-{
+char *lkernel_version(void) {
     char *temp = LUA_VERSION;   //Lua version
-    char *version;              //heap variable, needs to be freed after use.
+    char *version = NULL;       //heap variable, needs to be freed after use.
     unsigned int size = ( sizeof(char) * (strlen(temp)+1) );
 
     //allocate memory; check if allocation succeeded
     if( !(version = (char *)malloc( size )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("lkernel_version() => heap char* 'version': %s\n", ERROR_MALLOC);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
-        
+        dbgprint("lkernel_version() => heap char* 'version': %s\n", ERROR_MALLOC);
+
         return version; //aka NULL
     }
 
@@ -76,24 +80,23 @@ char *lkernel_version(void)
     return memcpy(version, temp, size);
 }
 
+
+
 /**
  * @brief Gives the current release of Lua.
  *
  * @return The release of Lua we are currently using.
  * @note Returned char* needs to be free()ed.
  */
-char *lkernel_release(void)
-{
+char *lkernel_release(void) {
     char *temp = LUA_RELEASE;   //Lua version (defined in lua.h)
     char *release;              //heap variable, needs to be freed after use.
     unsigned int size = ( sizeof(char) * (strlen(temp)+1) );
 
     //allocate memory; check if allocation succeeded
     if( !(release = (char *)malloc( size )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("lkernel_release() => heap char* 'release': %s\n", ERROR_MALLOC);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
-        
+        dbgprint("lkernel_release() => heap char* 'release': %s\n", ERROR_MALLOC);
+
         return release; //aka NULL
     }
 
@@ -101,23 +104,22 @@ char *lkernel_release(void)
     return memcpy(release, temp, size);
 }
 
+
+
 /**
  * @brief Gives Lua copyright info.
  *
  * @return A copyright statement for the Lua we are currently using.
  * @note Returned char* needs to be free()ed.
  */
-char *lkernel_copyright(void)
-{
+char *lkernel_copyright(void) {
     char *temp = LUA_COPYRIGHT;     //as defined in lua.h
     char *copyright;                //to become a heap variable (free() after use)
     unsigned int size = ( sizeof(char) * (strlen(temp)+1) );
 
     //allocate memory; check if allocation succeeded
     if( !(copyright = (char *)malloc( size )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("lkernel_copyright() => heap char* 'copyright': %s\n", ERROR_MALLOC);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("lkernel_copyright() => heap char* 'copyright': %s\n", ERROR_MALLOC);
 
         return copyright;   //aka NULL
     }
@@ -126,23 +128,22 @@ char *lkernel_copyright(void)
     return memcpy(copyright, temp, size);
 }
 
+
+
 /**
  * @brief Gives the authors of Lua.
  *
  * @return The authors who wrote the Lua script language we are currently using.
  * @note Returned char* needs to be free()ed.
  */
-char *lkernel_authors(void)
-{
+char *lkernel_authors(void) {
     char *temp = LUA_AUTHORS;   //found in lua.h
     char *authors;              //to become a heap variable
     unsigned int size = ( sizeof(char) * (strlen(temp)+1) );
 
     //allocate memory; check if allocation succeeded
     if( !(authors = (char *)malloc( size )) ) {
-        #if defined(DEBUGGING) || defined(VERBOSE)
-        debug_print("lkernel_author() => heap char* 'authors': %s\n", ERROR_MALLOC);
-        #endif /*defined DEBUGGING || defined VERBOSE*/
+        dbgprint("lkernel_author() => heap char* 'authors': %s\n", ERROR_MALLOC);
 
         return authors; //aka NULL
     }
