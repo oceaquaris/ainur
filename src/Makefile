@@ -1,5 +1,5 @@
 COMPLILER=gcc
-CFLAGS=-Wall -g
+CFLAGS=-fdiagnostics-color -Wall -g
 
 LIB_LUA=-llua
 LIB_MATH=-lm

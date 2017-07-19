@@ -9,6 +9,7 @@
 #define IMAGE_H_
 
 #include <stdio.h>
+#include <SDL2/SDL.h>
 
 #define IMAGE_SUCCESS   1
 #define IMAGE_FAILURE   0

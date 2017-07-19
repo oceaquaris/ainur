@@ -68,5 +68,6 @@ struct engine {
 
 extern struct engine ainur;     /* This struct is initialized in ainur.c */
 
+#define LKERNEL ainur.lkernel
 
 #endif /* AINUR_H_ */
